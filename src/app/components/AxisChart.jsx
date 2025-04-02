@@ -97,10 +97,16 @@ export default function AxisChart({
           label: `${axis.toUpperCase()}-Axis`,
           data: axisValues,
           borderColor: color,
-          backgroundColor: color.replace(')', ', 0.2)').replace('rgb', 'rgba'),
+          backgroundColor: 'transparent',
           borderWidth: 2,
-          tension: 0.2,
-          pointRadius: 1,
+          tension: 0.1, // Less smoothing to show spikes more clearly
+          pointRadius: 2, // Larger points
+          pointHoverRadius: 5,
+          pointBackgroundColor: color,
+          pointBorderColor: 'white',
+          pointBorderWidth: 1,
+          fill: false,
+          spanGaps: false,
         },
         {
           label: 'Average',
@@ -115,9 +121,28 @@ export default function AxisChart({
     });
   }, [data, axis, color, timeRange]);
 
+  // Determine Y-axis range based on the selected axis
+  const getYAxisRange = () => {
+    switch (axis) {
+      case 'x':
+        return { min: -11, max: -8 }; // Based on the image showing X around -9.75
+      case 'y':
+        return { min: -2, max: 4 }; // Based on the image showing Y with variations between -1 and 3
+      case 'z':
+        return { min: -3, max: 4 }; // Based on the image showing Z with variations
+      default:
+        return { min: -2, max: 2 };
+    }
+  };
+
+  const yAxisRange = getYAxisRange();
+
   const options = {
     responsive: true,
     maintainAspectRatio: false,
+    animation: {
+      duration: 0 // Disables animation for more real-time feeling
+    },
     interaction: {
       mode: 'index',
       intersect: false,
@@ -125,10 +150,20 @@ export default function AxisChart({
     plugins: {
       legend: {
         position: 'top',
+        labels: {
+          usePointStyle: true,
+          font: {
+            weight: 'bold'
+          }
+        }
       },
       title: {
         display: true,
         text: title,
+        font: {
+          size: 16,
+          weight: 'bold'
+        }
       },
       tooltip: {
         callbacks: {
@@ -149,21 +184,63 @@ export default function AxisChart({
       x: {
         title: {
           display: true,
-          text: 'Time',
+          text: 'Time (seconds)',
+          font: {
+            weight: 'bold'
+          }
         },
         ticks: {
           maxTicksLimit: 8,
+          font: {
+            size: 10
+          }
+        },
+        grid: {
+          display: true,
+          color: 'rgba(200, 200, 200, 0.2)',
+          drawBorder: true,
         }
       },
       y: {
         title: {
           display: true,
-          text: 'Acceleration (g)',
+          text: `${axis.toUpperCase()}-Axis (User unit)`,
+          font: {
+            weight: 'bold'
+          }
         },
-        suggestedMin: -1.5,
-        suggestedMax: 1.5,
+        min: yAxisRange.min,
+        max: yAxisRange.max,
+        ticks: {
+          font: {
+            size: 10
+          },
+          stepSize: 0.5 // More grid lines
+        },
+        grid: {
+          display: true,
+          color: 'rgba(200, 200, 200, 0.2)',
+          drawBorder: true,
+        }
       },
     },
+    elements: {
+      line: {
+        borderWidth: 2
+      },
+      point: {
+        radius: 2,
+        hoverRadius: 5
+      }
+    },
+    layout: {
+      padding: {
+        top: 10,
+        right: 10,
+        bottom: 10,
+        left: 10
+      }
+    }
   };
 
   if (!data || data.length === 0) {
@@ -175,7 +252,7 @@ export default function AxisChart({
   }
 
   return (
-    <div className="h-64">
+    <div className="h-64 bg-gray-900 rounded-lg p-2">
       <Line data={chartData} options={options} />
     </div>
   );

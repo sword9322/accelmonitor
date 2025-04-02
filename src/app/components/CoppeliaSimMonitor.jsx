@@ -114,193 +114,228 @@ export default function CoppeliaSimMonitor() {
   const currentReading = accelerometerData && accelerometerData.length > 0 ? accelerometerData[0] : null;
   
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">CoppeliaSim Accelerometer Monitor</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {/* Status Card */}
-        <div className="card p-4">
-          <h2 className="text-lg font-semibold mb-2">Connection Status</h2>
-          <div className="flex items-center gap-2 mb-4">
-            <div className={`w-3 h-3 rounded-full ${
-              status === STATUS.CONNECTED ? 'bg-success' :
-              status === STATUS.CONNECTING ? 'bg-warning' :
-              status === STATUS.ERROR ? 'bg-danger' : 'bg-gray-400'
-            }`}></div>
-            <span className="capitalize">{status}</span>
-          </div>
-          
-          {status === STATUS.ERROR && (
-            <div className="text-danger text-sm mt-2">
-              {error || 'Failed to connect to CoppeliaSim'}
-            </div>
-          )}
-          
+    <div className="w-full">
+      {/* Full-width top bar */}
+      <div className="w-full bg-indigo-600 text-white p-4 flex justify-between items-center">
+        <h1 className="text-2xl font-bold">CoppeliaSim Accelerometer Monitor</h1>
+        <div className="flex gap-2">
           <button 
-            onClick={() => accelerometerService.startPolling(1000)}
-            className="btn btn-primary mt-2 text-sm"
-            disabled={status === STATUS.CONNECTING || status === STATUS.CONNECTED}
+            onClick={() => window.document.documentElement.requestFullscreen()}
+            className="px-4 py-2 bg-indigo-700 rounded hover:bg-indigo-800 transition"
           >
-            Reconnect
+            Fullscreen Mode
           </button>
-        </div>
-        
-        {/* Current Reading Card */}
-        <div className="card p-4 col-span-1 md:col-span-2">
-          <h2 className="text-lg font-semibold mb-2">Current Reading</h2>
-          {currentReading ? (
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <p className="text-gray-600">X-Axis</p>
-                <p className="text-2xl font-mono">{currentReading.x.toFixed(4)}</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Y-Axis</p>
-                <p className="text-2xl font-mono">{currentReading.y.toFixed(4)}</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Z-Axis</p>
-                <p className="text-2xl font-mono">{currentReading.z.toFixed(4)}</p>
-              </div>
-              <div className="col-span-3 text-xs text-gray-500">
-                Last updated: {currentReading.timestamp ? (
-                  currentReading.timestamp instanceof Date 
-                    ? currentReading.timestamp.toLocaleTimeString() 
-                    : new Date(currentReading.timestamp).toLocaleTimeString()
-                ) : 'Unknown'}
-              </div>
-            </div>
-          ) : (
-            <div className="text-gray-500">No data available</div>
-          )}
-        </div>
-      </div>
-      
-      {/* Chart Controls */}
-      <div className="flex flex-wrap gap-4 mb-4">
-        <div>
-          <label htmlFor="timeRange" className="block text-sm font-medium text-gray-700 mb-1">Time Range</label>
-          <select 
-            id="timeRange" 
-            className="input"
-            value={timeRange}
-            onChange={handleTimeRangeChange}
-          >
-            <option value="5m">Last 5 minutes</option>
-            <option value="15m">Last 15 minutes</option>
-            <option value="1h">Last hour</option>
-            <option value="24h">Last 24 hours</option>
-          </select>
-        </div>
-        
-        <div>
-          <label htmlFor="chartType" className="block text-sm font-medium text-gray-700 mb-1">Chart Type</label>
-          <select 
-            id="chartType" 
-            className="input"
-            value={chartType}
-            onChange={handleChartTypeChange}
-          >
-            <option value="line">Line Chart</option>
-            <option value="bar">Bar Chart</option>
-          </select>
-        </div>
-        
-        <div className="flex-grow"></div>
-        
-        <div className="flex items-end">
           <button 
-            onClick={toggleLogging}
-            className={`btn ${isLogging ? 'bg-danger text-white' : 'btn-primary'}`}
+            onClick={() => window.location.href = '/dashboard'}
+            className="px-4 py-2 bg-white text-indigo-600 rounded hover:bg-gray-100 transition"
           >
-            {isLogging ? 'Stop Logging' : 'Start Logging'}
+            Back to Dashboard
           </button>
         </div>
       </div>
       
-      {/* Chart */}
-      <div className="card p-6 mb-8">
-        <h2 className="text-xl font-semibold mb-4">Accelerometer Data</h2>
-        <AccelerometerChart 
-          data={accelerometerData} 
-          chartType={chartType}
-          timeRange={timeRange}
-        />
+      {/* Information alert */}
+      <div className="w-full bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+        <p className="text-blue-800">
+          This page provides real-time monitoring of accelerometer data from CoppeliaSim. The graph below shows the most recent readings for all three axes (X, Y, Z).
+        </p>
+        <p className="text-blue-700 mt-2 flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 mr-1">
+            <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 11-.671-1.34l.041-.022zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z" clipRule="evenodd" />
+          </svg>
+          Configure the update interval and chart range using the controls below the chart.
+        </p>
       </div>
       
-      {/* Individual Axis Charts */}
-      {accelerometerData.length > 0 && (
+      <div className="container mx-auto p-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {/* Status Card */}
           <div className="card p-4">
-            <h2 className="text-lg font-semibold mb-2">X-Axis Variations</h2>
-            <AxisChart 
-              data={accelerometerData} 
-              axis="x" 
-              color="rgb(255, 99, 132)" 
-              timeRange={timeRange}
-              title="X-Axis Acceleration"
-            />
+            <h2 className="text-lg font-semibold mb-2">Connection Status</h2>
+            <div className="flex items-center gap-2 mb-4">
+              <div className={`w-3 h-3 rounded-full ${
+                status === STATUS.CONNECTED ? 'bg-green-500' :
+                status === STATUS.CONNECTING ? 'bg-yellow-500' :
+                status === STATUS.ERROR ? 'bg-red-500' : 'bg-gray-400'
+              }`}></div>
+              <span className="capitalize">{status}</span>
+            </div>
+            
+            {status === STATUS.ERROR && (
+              <div className="text-red-500 text-sm mt-2">
+                {error || 'Failed to connect to CoppeliaSim'}
+              </div>
+            )}
+            
+            <button 
+              onClick={() => accelerometerService.startPolling(1000)}
+              className="btn btn-primary mt-2 text-sm"
+              disabled={status === STATUS.CONNECTING || status === STATUS.CONNECTED}
+            >
+              Reconnect
+            </button>
           </div>
           
-          <div className="card p-4">
-            <h2 className="text-lg font-semibold mb-2">Y-Axis Variations</h2>
-            <AxisChart 
-              data={accelerometerData} 
-              axis="y" 
-              color="rgb(75, 192, 192)" 
-              timeRange={timeRange}
-              title="Y-Axis Acceleration"
-            />
-          </div>
-          
-          <div className="card p-4">
-            <h2 className="text-lg font-semibold mb-2">Z-Axis Variations</h2>
-            <AxisChart 
-              data={accelerometerData} 
-              axis="z" 
-              color="rgb(53, 162, 235)" 
-              timeRange={timeRange}
-              title="Z-Axis Acceleration"
-            />
+          {/* Current Reading Card */}
+          <div className="card p-4 col-span-1 md:col-span-2">
+            <h2 className="text-lg font-semibold mb-2">Current Reading</h2>
+            {currentReading ? (
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <p className="text-gray-600">X-Axis</p>
+                  <p className="text-2xl font-mono">{currentReading.x.toFixed(4)}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Y-Axis</p>
+                  <p className="text-2xl font-mono">{currentReading.y.toFixed(4)}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Z-Axis</p>
+                  <p className="text-2xl font-mono">{currentReading.z.toFixed(4)}</p>
+                </div>
+                <div className="col-span-3 text-xs text-gray-500">
+                  Last updated: {currentReading.timestamp ? (
+                    currentReading.timestamp instanceof Date 
+                      ? currentReading.timestamp.toLocaleTimeString() 
+                      : new Date(currentReading.timestamp).toLocaleTimeString()
+                  ) : 'Unknown'}
+                </div>
+              </div>
+            ) : (
+              <div className="text-gray-500">No data available</div>
+            )}
           </div>
         </div>
-      )}
-      
-      {/* Data Logger Section */}
-      <div className="card p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Data Log</h2>
-          <div className="flex gap-2">
-            <button 
-              onClick={clearLog}
-              className="btn bg-gray-200 hover:bg-gray-300 text-gray-800"
-              disabled={logEntries.length === 0}
+        
+        {/* Chart Controls */}
+        <div className="flex flex-wrap gap-4 mb-4">
+          <div>
+            <label htmlFor="timeRange" className="block text-sm font-medium text-gray-700 mb-1">Time Range</label>
+            <select 
+              id="timeRange" 
+              className="input"
+              value={timeRange}
+              onChange={handleTimeRangeChange}
             >
-              Clear Log
-            </button>
-            <button 
-              onClick={downloadLog}
-              className="btn btn-primary"
-              disabled={logEntries.length === 0}
+              <option value="5m">Last 5 minutes</option>
+              <option value="15m">Last 15 minutes</option>
+              <option value="1h">Last hour</option>
+              <option value="24h">Last 24 hours</option>
+            </select>
+          </div>
+          
+          <div>
+            <label htmlFor="chartType" className="block text-sm font-medium text-gray-700 mb-1">Chart Type</label>
+            <select 
+              id="chartType" 
+              className="input"
+              value={chartType}
+              onChange={handleChartTypeChange}
             >
-              Download Log
+              <option value="line">Line Chart</option>
+              <option value="bar">Bar Chart</option>
+            </select>
+          </div>
+          
+          <div className="flex-grow"></div>
+          
+          <div className="flex items-end">
+            <button 
+              onClick={toggleLogging}
+              className={`btn ${isLogging ? 'bg-red-500 text-white' : 'btn-primary'}`}
+            >
+              {isLogging ? 'Stop Logging' : 'Start Logging'}
             </button>
           </div>
         </div>
         
-        <div 
-          ref={logRef}
-          className="h-60 overflow-y-auto bg-gray-50 p-3 rounded border border-gray-200 font-mono text-sm"
-        >
-          {logEntries.length > 0 ? (
-            logEntries.map((entry, index) => (
-              <div key={index} className="mb-1">{entry}</div>
-            ))
-          ) : (
-            <div className="text-gray-500 text-center py-4">
-              {isLogging ? 'Logging data...' : 'Start logging to capture data'}
+        {/* Combined Chart */}
+        <div className="card p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-4">Combined Accelerometer Data</h2>
+          <AccelerometerChart 
+            data={accelerometerData} 
+            chartType={chartType}
+            timeRange={timeRange}
+          />
+        </div>
+        
+        {/* Individual Axis Charts */}
+        {accelerometerData.length > 0 && (
+          <>
+            {/* X-Axis Chart */}
+            <div className="card p-6 mb-8">
+              <h2 className="text-xl font-semibold mb-4">X-Axis Acceleration</h2>
+              <AxisChart 
+                data={accelerometerData} 
+                axis="x" 
+                color="rgb(255, 99, 132)" 
+                timeRange={timeRange}
+                title="X-Axis Readings"
+              />
             </div>
-          )}
+            
+            {/* Y-Axis Chart */}
+            <div className="card p-6 mb-8">
+              <h2 className="text-xl font-semibold mb-4">Y-Axis Acceleration</h2>
+              <AxisChart 
+                data={accelerometerData} 
+                axis="y" 
+                color="rgb(75, 192, 192)" 
+                timeRange={timeRange}
+                title="Y-Axis Readings"
+              />
+            </div>
+            
+            {/* Z-Axis Chart */}
+            <div className="card p-6 mb-8">
+              <h2 className="text-xl font-semibold mb-4">Z-Axis Acceleration</h2>
+              <AxisChart 
+                data={accelerometerData} 
+                axis="z" 
+                color="rgb(53, 162, 235)" 
+                timeRange={timeRange}
+                title="Z-Axis Readings"
+              />
+            </div>
+          </>
+        )}
+        
+        {/* Data Logger Section */}
+        <div className="card p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Data Log</h2>
+            <div className="flex gap-2">
+              <button 
+                onClick={clearLog}
+                className="btn bg-gray-200 hover:bg-gray-300 text-gray-800"
+                disabled={logEntries.length === 0}
+              >
+                Clear Log
+              </button>
+              <button 
+                onClick={downloadLog}
+                className="btn btn-primary"
+                disabled={logEntries.length === 0}
+              >
+                Download Log
+              </button>
+            </div>
+          </div>
+          
+          <div 
+            ref={logRef}
+            className="h-60 overflow-y-auto bg-gray-50 p-3 rounded border border-gray-200 font-mono text-sm"
+          >
+            {logEntries.length > 0 ? (
+              logEntries.map((entry, index) => (
+                <div key={index} className="mb-1">{entry}</div>
+              ))
+            ) : (
+              <div className="text-gray-500 text-center py-4">
+                {isLogging ? 'Logging data...' : 'Start logging to capture data'}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
