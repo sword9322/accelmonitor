@@ -261,43 +261,43 @@ export default function CoppeliaSimMonitor() {
         
         {/* Individual Axis Charts */}
         {accelerometerData.length > 0 && (
-          <>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {/* X-Axis Chart */}
-            <div className="card p-6 mb-8">
-              <h2 className="text-xl font-semibold mb-4">X-Axis Acceleration</h2>
+            <div className="card p-4">
+              <h2 className="text-lg font-semibold mb-2">X-Axis Variations</h2>
               <AxisChart 
                 data={accelerometerData} 
                 axis="x" 
                 color="rgb(255, 99, 132)" 
                 timeRange={timeRange}
-                title="X-Axis Readings"
+                title="X-Axis Acceleration"
               />
             </div>
             
             {/* Y-Axis Chart */}
-            <div className="card p-6 mb-8">
-              <h2 className="text-xl font-semibold mb-4">Y-Axis Acceleration</h2>
+            <div className="card p-4">
+              <h2 className="text-lg font-semibold mb-2">Y-Axis Variations</h2>
               <AxisChart 
                 data={accelerometerData} 
                 axis="y" 
                 color="rgb(75, 192, 192)" 
                 timeRange={timeRange}
-                title="Y-Axis Readings"
+                title="Y-Axis Acceleration"
               />
             </div>
             
             {/* Z-Axis Chart */}
-            <div className="card p-6 mb-8">
-              <h2 className="text-xl font-semibold mb-4">Z-Axis Acceleration</h2>
+            <div className="card p-4">
+              <h2 className="text-lg font-semibold mb-2">Z-Axis Variations</h2>
               <AxisChart 
                 data={accelerometerData} 
                 axis="z" 
                 color="rgb(53, 162, 235)" 
                 timeRange={timeRange}
-                title="Z-Axis Readings"
+                title="Z-Axis Acceleration"
               />
             </div>
-          </>
+          </div>
         )}
         
         {/* Data Logger Section */}

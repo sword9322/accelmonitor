@@ -121,21 +121,76 @@ export default function AxisChart({
     });
   }, [data, axis, color, timeRange]);
 
-  // Determine Y-axis range based on the selected axis
-  const getYAxisRange = () => {
+  // Calculate dynamic Y-axis range based on actual data values
+  const calculateDynamicRange = () => {
+    if (!data || data.length === 0) {
+      return getDefaultRange();
+    }
+
+    // Filter data based on timeRange first
+    const now = new Date();
+    let filteredData = [...data];
+    
+    if (timeRange === '5m') {
+      const fiveMinutesAgo = subMinutes(now, 5);
+      filteredData = data.filter(reading => new Date(reading.timestamp) >= fiveMinutesAgo);
+    } else if (timeRange === '15m') {
+      const fifteenMinutesAgo = subMinutes(now, 15);
+      filteredData = data.filter(reading => new Date(reading.timestamp) >= fifteenMinutesAgo);
+    } else if (timeRange === '1h') {
+      const oneHourAgo = subHours(now, 1);
+      filteredData = data.filter(reading => new Date(reading.timestamp) >= oneHourAgo);
+    } else if (timeRange === '24h') {
+      const oneDayAgo = subHours(now, 24);
+      filteredData = data.filter(reading => new Date(reading.timestamp) >= oneDayAgo);
+    }
+
+    // Ensure we have data to analyze
+    if (filteredData.length === 0) {
+      filteredData = data.slice(0, Math.min(20, data.length));
+    }
+
+    // Extract axis values
+    const axisValues = filteredData.map(reading => reading[axis]);
+    
+    // Calculate min and max values
+    let min = Math.min(...axisValues);
+    let max = Math.max(...axisValues);
+    
+    // Calculate the range of values
+    const valueRange = max - min;
+    
+    // If we have a very small range, expand it a bit to avoid flat lines
+    if (valueRange < 0.2) {
+      const average = (max + min) / 2;
+      min = average - 0.5;
+      max = average + 0.5;
+    } else {
+      // Add padding to ensure spikes are visible (20% padding)
+      const padding = valueRange * 0.2;
+      min = min - padding;
+      max = max + padding;
+    }
+    
+    return { min, max };
+  };
+
+  // Default ranges for each axis if needed
+  const getDefaultRange = () => {
     switch (axis) {
       case 'x':
-        return { min: -11, max: -8 }; // Based on the image showing X around -9.75
+        return { min: -11, max: -8 }; 
       case 'y':
-        return { min: -2, max: 4 }; // Based on the image showing Y with variations between -1 and 3
+        return { min: -2, max: 4 }; 
       case 'z':
-        return { min: -3, max: 4 }; // Based on the image showing Z with variations
+        return { min: -3, max: 4 }; 
       default:
         return { min: -2, max: 2 };
     }
   };
 
-  const yAxisRange = getYAxisRange();
+  // Use dynamic range calculation
+  const yAxisRange = calculateDynamicRange();
 
   const options = {
     responsive: true,
@@ -215,7 +270,8 @@ export default function AxisChart({
           font: {
             size: 10
           },
-          stepSize: 0.5 // More grid lines
+          // Auto calculate step size based on range
+          stepSize: Math.max(0.1, Math.abs(yAxisRange.max - yAxisRange.min) / 10),
         },
         grid: {
           display: true,
