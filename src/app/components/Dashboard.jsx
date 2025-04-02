@@ -5,7 +5,11 @@ import { useAuth } from '../context/AuthContext';
 import AccelerometerChart from './AccelerometerChart';
 import AxisChart from './AxisChart';
 import SettingsPanel from './SettingsPanel';
+import AlarmPanel from './AlarmPanel';
 import accelerometerService from '../services/accelerometerService';
+import alarmService from '../services/alarmService';
+import reportService from '../services/reportService';
+import predictionService from '../services/predictionService';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -24,6 +28,26 @@ export default function Dashboard() {
   });
   const [isClearing, setIsClearing] = useState(false);
   const [clearSuccess, setClearSuccess] = useState(null);
+  
+  // New states for alarms, reports, and predictions
+  const [activeAlarms, setActiveAlarms] = useState([]);
+  const [alarmHistory, setAlarmHistory] = useState([]);
+  const [alarmThresholds, setAlarmThresholds] = useState({
+    x: { min: -10, max: 10 },
+    y: { min: -10, max: 10 },
+    z: { min: -10, max: 10 }
+  });
+  const [predictionEnabled, setPredictionEnabled] = useState(false);
+  const [predictionMethod, setPredictionMethod] = useState('linear');
+  const [predictedData, setPredictedData] = useState([]);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  
+  // Initialize alarm service with stored thresholds
+  useEffect(() => {
+    // Get stored thresholds from localStorage or use defaults
+    const storedThresholds = alarmService.getThresholds();
+    setAlarmThresholds(storedThresholds);
+  }, []);
   
   useEffect(() => {
     // Set up data polling when the component mounts
@@ -46,6 +70,29 @@ export default function Dashboard() {
               lastActivity: new Date(),
               consecutiveEmptyFetches: 0
             });
+            
+            // Check for alarms
+            const triggeredAlarms = alarmService.checkThresholds(newData);
+            if (triggeredAlarms.length > 0) {
+              setActiveAlarms(alarmService.getActiveAlarms());
+              setAlarmHistory(alarmService.getAlarmHistory());
+              
+              // Show browser notification for new alarms
+              triggeredAlarms.forEach(alarm => {
+                alarmService.showNotification(alarm);
+              });
+            }
+            
+            // Generate predictions if enabled
+            if (predictionEnabled && newData.length >= 5) {
+              const predictions = predictionMethod === 'linear'
+                ? predictionService.predictLinear(newData)
+                : predictionService.predictExponentialSmoothing(newData);
+              
+              setPredictedData(predictions);
+            } else {
+              setPredictedData([]);
+            }
           } else if (newData && newData.length === 0) {
             setServerStatus(prevStatus => ({
               ...prevStatus,
@@ -77,7 +124,7 @@ export default function Dashboard() {
       }
       accelerometerService.stopPolling();
     };
-  }, [refreshInterval]);
+  }, [refreshInterval, predictionEnabled, predictionMethod]);
   
   const handleRefreshIntervalChange = (seconds) => {
     // Make sure we're handling seconds as a float
@@ -93,6 +140,64 @@ export default function Dashboard() {
 
   const handleTimeRangeChange = (range) => {
     setTimeRange(range);
+  };
+  
+  const handleAlarmThresholdsChange = (thresholds) => {
+    setAlarmThresholds(thresholds);
+    
+    // Update alarm service with new thresholds
+    Object.entries(thresholds).forEach(([axis, { min, max }]) => {
+      alarmService.setThreshold(axis, min, max);
+    });
+    
+    // Re-check current data with new thresholds
+    if (accelerometerData.length > 0) {
+      alarmService.checkThresholds(accelerometerData);
+      setActiveAlarms(alarmService.getActiveAlarms());
+    }
+  };
+  
+  const handleClearAlarms = () => {
+    alarmService.clearActiveAlarms();
+    setActiveAlarms([]);
+  };
+  
+  const handlePredictionEnabledChange = (enabled) => {
+    setPredictionEnabled(enabled);
+    
+    // Clear predictions if disabled
+    if (!enabled) {
+      setPredictedData([]);
+    }
+  };
+  
+  const handlePredictionMethodChange = (method) => {
+    setPredictionMethod(method);
+  };
+  
+  const handleGenerateReport = (timeInterval) => {
+    if (!accelerometerData || accelerometerData.length === 0) {
+      alert('No data available to generate a report.');
+      return;
+    }
+    
+    setIsGeneratingReport(true);
+    
+    try {
+      // Generate report data
+      const reportData = reportService.generateReportData(timeInterval, accelerometerData);
+      
+      // Generate CSV content
+      const csvContent = reportService.generateCSVReport(reportData);
+      
+      // Trigger download
+      reportService.downloadCSV(csvContent, `accel-report-${timeInterval}-${new Date().toISOString().slice(0, 10)}.csv`);
+    } catch (error) {
+      console.error('Error generating report:', error);
+      alert('Failed to generate report. Please try again.');
+    } finally {
+      setIsGeneratingReport(false);
+    }
   };
 
   const toggleSettings = () => {
@@ -113,6 +218,8 @@ export default function Dashboard() {
       setClearSuccess(success);
       if (success) {
         setAccelerometerData([]); // Clear local data as well
+        setPredictedData([]); // Clear predictions
+        handleClearAlarms(); // Clear any active alarms
       }
     } catch (error) {
       console.error('Error clearing database:', error);
@@ -138,8 +245,29 @@ export default function Dashboard() {
     const stats = accelerometerService.calculateStatistics(accelerometerData);
     return stats;
   };
+  
+  // Combine actual and predicted data for charts (if prediction is enabled)
+  const getChartData = () => {
+    if (predictionEnabled && predictedData.length > 0) {
+      // Create a copy of the data to avoid modifying the original
+      const combinedData = [...accelerometerData];
+      
+      // Add predicted data with a flag to distinguish it
+      predictedData.forEach(point => {
+        combinedData.push({
+          ...point,
+          isPrediction: true  // Flag to style differently in charts
+        });
+      });
+      
+      return combinedData;
+    }
+    
+    return accelerometerData;
+  };
 
   const stats = calculateStats();
+  const chartData = getChartData();
   
   return (
     <div className="container mx-auto p-4">
@@ -169,6 +297,15 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
+
+      {/* Alarm Panel */}
+      {!loading && (
+        <AlarmPanel 
+          activeAlarms={activeAlarms} 
+          alarmHistory={alarmHistory}
+          onClearAlarms={handleClearAlarms}
+        />
+      )}
 
       {/* Database Management */}
       <div className="mb-8">
@@ -217,7 +354,14 @@ export default function Dashboard() {
           onChartTypeChange={handleChartTypeChange}
           timeRange={timeRange}
           onTimeRangeChange={handleTimeRangeChange}
+          alarmThresholds={alarmThresholds}
+          onAlarmThresholdsChange={handleAlarmThresholdsChange}
+          predictionEnabled={predictionEnabled}
+          onPredictionEnabledChange={handlePredictionEnabledChange}
+          predictionMethod={predictionMethod}
+          onPredictionMethodChange={handlePredictionMethodChange}
           onClose={toggleSettings}
+          onGenerateReport={handleGenerateReport}
         />
       )}
 
@@ -296,9 +440,16 @@ export default function Dashboard() {
       )}
 
       <div className="card p-6 mb-8">
-        <h2 className="text-xl font-semibold mb-4">Combined Accelerometer Data</h2>
+        <h2 className="text-xl font-semibold mb-4">
+          Combined Accelerometer Data
+          {predictionEnabled && (
+            <span className="ml-2 text-sm font-normal text-blue-500">
+              (with {predictionMethod === 'linear' ? 'Linear' : 'Exponential'} Prediction)
+            </span>
+          )}
+        </h2>
         <AccelerometerChart 
-          data={accelerometerData} 
+          data={chartData} 
           chartType={chartType}
           timeRange={timeRange}
         />
@@ -310,7 +461,7 @@ export default function Dashboard() {
           <div className="card p-4">
             <h2 className="text-lg font-semibold mb-2">X-Axis Variations</h2>
             <AxisChart 
-              data={accelerometerData} 
+              data={chartData} 
               axis="x" 
               color="rgb(255, 99, 132)" 
               timeRange={timeRange}
@@ -321,7 +472,7 @@ export default function Dashboard() {
           <div className="card p-4">
             <h2 className="text-lg font-semibold mb-2">Y-Axis Variations</h2>
             <AxisChart 
-              data={accelerometerData} 
+              data={chartData} 
               axis="y" 
               color="rgb(75, 192, 192)" 
               timeRange={timeRange}
@@ -332,7 +483,7 @@ export default function Dashboard() {
           <div className="card p-4">
             <h2 className="text-lg font-semibold mb-2">Z-Axis Variations</h2>
             <AxisChart 
-              data={accelerometerData} 
+              data={chartData} 
               axis="z" 
               color="rgb(53, 162, 235)" 
               timeRange={timeRange}
@@ -352,20 +503,30 @@ export default function Dashboard() {
                 <th className="px-4 py-2 text-left text-white">X-Axis</th>
                 <th className="px-4 py-2 text-left text-white">Y-Axis</th>
                 <th className="px-4 py-2 text-left text-white">Z-Axis</th>
+                {predictionEnabled && <th className="px-4 py-2 text-left text-white">Type</th>}
               </tr>
             </thead>
             <tbody>
-              {accelerometerData.slice(0, 10).map((reading, index) => (
-                <tr key={reading.id || index} className="border-b border-gray-200 dark:border-gray-700">
+              {chartData.slice(0, 10).map((reading, index) => (
+                <tr key={reading.id || index} className={reading.isPrediction ? 'bg-blue-50 dark:bg-blue-900' : 'border-b border-gray-200 dark:border-gray-700'}>
                   <td className="px-4 py-2">{reading.timestamp?.toLocaleTimeString() || 'Unknown'}</td>
                   <td className="px-4 py-2">{reading.x.toFixed(4)}</td>
                   <td className="px-4 py-2">{reading.y.toFixed(4)}</td>
                   <td className="px-4 py-2">{reading.z.toFixed(4)}</td>
+                  {predictionEnabled && (
+                    <td className="px-4 py-2">
+                      {reading.isPrediction ? (
+                        <span className="text-blue-500">Predicted</span>
+                      ) : (
+                        <span className="text-green-500">Actual</span>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ))}
-              {accelerometerData.length === 0 && (
+              {chartData.length === 0 && (
                 <tr>
-                  <td colSpan="4" className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={predictionEnabled ? "5" : "4"} className="px-4 py-8 text-center text-gray-500">
                     No data available
                   </td>
                 </tr>
