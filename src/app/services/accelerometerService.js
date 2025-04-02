@@ -415,4 +415,26 @@ const accelerometerService = {
     return {
       id: `dummy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       x: Math.random() * 2 - 1, // Random value between -1 and 1
-      y: Math
+      y: Math.random() * 2 - 1,
+      z: Math.random() * 2 - 1,
+      timestamp: Math.floor(Date.now() / 1000) // Unix timestamp in seconds
+    };
+  },
+
+  /**
+   * Generate dummy accelerometer data for testing
+   * @param {number} count - Number of dummy readings to generate
+   * @returns {Array} - Array of dummy accelerometer readings
+   */
+  generateDummyData: (count = 10) => {
+    return Array.from({ length: count }, (_, i) => ({
+      id: `dummy-${i}`,
+      x: Number((Math.random() * 2 - 1).toFixed(4)),
+      y: Number((Math.random() * 2 - 1).toFixed(4)),
+      z: Number((Math.random() * 2 - 1).toFixed(4)),
+      timestamp: Math.floor(Date.now() / 1000) - i * 60, // Staggered timestamps
+    }));
+  }
+};
+
+export default accelerometerService;
