@@ -50,7 +50,8 @@ export default function CoppeliaSimMonitor() {
           }
         });
         
-        // Start the polling service with the current polling frequency
+        // Start the polling service with the current polling frequency in milliseconds
+        console.log(`Starting polling with ${pollingFrequency}ms interval`);
         accelerometerService.startPolling(pollingFrequency);
         
         return unsubscribe;
@@ -115,6 +116,7 @@ export default function CoppeliaSimMonitor() {
 
   const handlePollingFrequencyChange = (e) => {
     const frequency = parseInt(e.target.value, 10);
+    console.log(`Setting polling frequency to ${frequency}ms`);
     setPollingFrequency(frequency);
     // The useEffect will restart polling with the new frequency automatically
   };
@@ -325,7 +327,8 @@ export default function CoppeliaSimMonitor() {
               value={pollingFrequency}
               onChange={handlePollingFrequencyChange}
             >
-              <option value="200">Live (200ms)</option>
+              <option value="100">Live (100ms)</option>
+              <option value="200">Very Fast (200ms)</option>
               <option value="500">Fast (500ms)</option>
               <option value="1000">Normal (1s)</option>
               <option value="2000">Slow (2s)</option>

@@ -15,7 +15,8 @@ export default function SettingsPanel({
   
   // Update frequency options
   const updateFrequencyOptions = [
-    { label: 'Live (200ms)', value: 0.2 },
+    { label: 'Live (100ms)', value: 0.1 },
+    { label: 'Very Fast (200ms)', value: 0.2 },
     { label: 'Fast (500ms)', value: 0.5 },
     { label: '1 second', value: 1 },
     { label: '2 seconds', value: 2 },
@@ -42,6 +43,7 @@ export default function SettingsPanel({
   // Handle update frequency change
   const handleUpdateFrequencyChange = (e) => {
     const newInterval = parseFloat(e.target.value);
+    console.log(`Setting refresh interval to ${newInterval} seconds (${newInterval * 1000}ms)`);
     setSelectedInterval(newInterval);
   };
 
@@ -58,13 +60,15 @@ export default function SettingsPanel({
   };
 
   // Apply settings
-  const applySettings = () => {
+  const handleSave = () => {
     setIsSaving(true);
     
-    // Apply the new refresh interval
+    // Ensure the interval is properly passed as a float
     onRefreshIntervalChange(selectedInterval);
+    onChartTypeChange(selectedChartType);
+    onTimeRangeChange(selectedTimeRange);
     
-    // Close the settings panel after a brief delay
+    // Simulate saving delay
     setTimeout(() => {
       setIsSaving(false);
       onClose();
@@ -73,6 +77,8 @@ export default function SettingsPanel({
   
   // Track selected interval separately to avoid immediate changes
   const [selectedInterval, setSelectedInterval] = useState(refreshInterval);
+  const [selectedChartType, setSelectedChartType] = useState(chartType);
+  const [selectedTimeRange, setSelectedTimeRange] = useState(timeRange);
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-md mb-6 border border-gray-200">
@@ -116,7 +122,7 @@ export default function SettingsPanel({
           </label>
           <select
             id="chartType"
-            value={chartType}
+            value={selectedChartType}
             onChange={handleChartTypeChange}
             className="input w-full"
           >
@@ -134,7 +140,7 @@ export default function SettingsPanel({
           </label>
           <select
             id="timeRange"
-            value={timeRange}
+            value={selectedTimeRange}
             onChange={handleTimeRangeChange}
             className="input w-full"
           >
@@ -149,7 +155,7 @@ export default function SettingsPanel({
 
       <div className="mt-6">
         <button
-          onClick={applySettings}
+          onClick={handleSave}
           disabled={isSaving}
           className="btn btn-primary w-full"
         >

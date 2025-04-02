@@ -41,17 +41,24 @@ const accelerometerService = {
     // Ensure minimum polling delay to prevent performance issues
     const safeDelay = Math.max(100, delay); // Minimum 100ms polling interval
     
-    console.log(`Starting accelerometer polling with ${safeDelay}ms interval`);
+    console.log(`Starting accelerometer polling with ${safeDelay}ms interval (${safeDelay/1000} seconds)`);
     accelerometerService._pollingDelay = safeDelay;
     
-    // Initial fetch
-    accelerometerService._fetchAndNotify();
+    // For very fast polling (Live mode), do immediate fetch for responsiveness
+    if (safeDelay <= 200) {
+      console.log('Live mode detected - immediate initial fetch');
+      accelerometerService._fetchAndNotify();
+    } else {
+      // Standard delay for normal polling
+      accelerometerService._fetchAndNotify();
+    }
     
     // Set up interval for continuous fetching
     accelerometerService._pollingInterval = setInterval(() => {
       // For high-frequency polling (less than 500ms), use a more concise log
       if (safeDelay < 500) {
-        console.log(`Fast poll: ${new Date().toLocaleTimeString()}`);
+        const now = new Date();
+        console.log(`Fast poll: ${now.toLocaleTimeString()}.${now.getMilliseconds().toString().padStart(3, '0')}`);
       } else {
         console.log(`Polling data (interval: ${accelerometerService._pollingDelay}ms) at ${new Date().toLocaleTimeString()}`);
       }

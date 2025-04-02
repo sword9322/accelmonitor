@@ -29,6 +29,10 @@ export default function Dashboard() {
     // Set up data polling when the component mounts
     const fetchData = async () => {
       try {
+        // Log with millisecond precision for sub-second intervals
+        const intervalMs = refreshInterval * 1000;
+        console.log(`Setting up data subscription with ${refreshInterval} second interval (${intervalMs}ms) at ${new Date().toLocaleTimeString()}`);
+        
         // Set up the subscription
         const unsubscribe = accelerometerService.subscribe(newData => {
           if (newData && newData.length > 0) {
@@ -76,8 +80,10 @@ export default function Dashboard() {
   }, [refreshInterval]);
   
   const handleRefreshIntervalChange = (seconds) => {
-    console.log(`Setting refresh interval to ${seconds} seconds`);
-    setRefreshInterval(seconds);
+    // Make sure we're handling seconds as a float
+    const intervalInSeconds = parseFloat(seconds);
+    console.log(`Setting refresh interval to ${intervalInSeconds} seconds (${intervalInSeconds * 1000}ms)`);
+    setRefreshInterval(intervalInSeconds);
     // No need to manually restart polling here as the useEffect will handle it
   };
 
