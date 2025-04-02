@@ -208,10 +208,9 @@ const accelerometerService = {
       } catch (error) {
         console.error('Error fetching from Firebase:', error);
         
-        // Use dummy data in development mode if Firebase fails
-        if (process.env.NODE_ENV === 'development') {
-          data = [accelerometerService.generateSingleDummyPoint()];
-        }
+        // Don't generate dummy data automatically
+        // Instead, return an empty array to indicate the server is down
+        data = [];
       }
       
       // Only update and notify if we have data
@@ -288,8 +287,7 @@ const accelerometerService = {
         accelerometerService._lastData = updatedData;
         
         // Notify all subscribers
-        if (accelerometerService._subscribers.length > 0 && 
-            (normalizedData.length > 0 || updatedData !== accelerometerService._lastData)) {
+        if (accelerometerService._subscribers.length > 0) {
           accelerometerService._subscribers.forEach(callback => {
             try {
               callback(updatedData);
@@ -298,6 +296,16 @@ const accelerometerService = {
             }
           });
         }
+      } else {
+        // No data retrieved, still notify subscribers with empty array or last data
+        // This allows components to detect that the server is not providing new data
+        accelerometerService._subscribers.forEach(callback => {
+          try {
+            callback(accelerometerService._lastData);
+          } catch (callbackError) {
+            console.error('Error in subscriber callback:', callbackError);
+          }
+        });
       }
     } catch (error) {
       console.error('Error in _fetchAndNotify:', error);
@@ -342,9 +350,17 @@ const accelerometerService = {
       console.log(`Successfully fetched ${sortedReadings.length} simulator readings from Firebase`);
       return sortedReadings;
     } catch (error) {
-      console.error('Error fetching simulator readings from Firebase:', error);
-      console.error('Firebase error details:', error.code, error.message);
-      throw error;
+      // Check if this is a permission error
+      if (error.message && error.message.includes('Permission denied')) {
+        console.error('Permission denied accessing simulator readings. Check Firebase database rules.');
+        console.error('Firebase error details:', error.code, error.message);
+        // Return an empty array with a special property indicating permission error
+        return [];
+      } else {
+        console.error('Error fetching simulator readings from Firebase:', error);
+        console.error('Firebase error details:', error.code, error.message);
+        throw error;
+      }
     }
   },
 
@@ -399,26 +415,4 @@ const accelerometerService = {
     return {
       id: `dummy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       x: Math.random() * 2 - 1, // Random value between -1 and 1
-      y: Math.random() * 2 - 1,
-      z: Math.random() * 2 - 1,
-      timestamp: Math.floor(Date.now() / 1000) // Unix timestamp in seconds
-    };
-  },
-
-  /**
-   * Generate dummy accelerometer data for testing
-   * @param {number} count - Number of dummy readings to generate
-   * @returns {Array} - Array of dummy accelerometer readings
-   */
-  generateDummyData: (count = 10) => {
-    return Array.from({ length: count }, (_, i) => ({
-      id: `dummy-${i}`,
-      x: Number((Math.random() * 2 - 1).toFixed(4)),
-      y: Number((Math.random() * 2 - 1).toFixed(4)),
-      z: Number((Math.random() * 2 - 1).toFixed(4)),
-      timestamp: Math.floor(Date.now() / 1000) - i * 60, // Staggered timestamps
-    }));
-  }
-};
-
-export default accelerometerService; 
+      y: Math

@@ -16,6 +16,47 @@ export default function Dashboard() {
   const [showSettings, setShowSettings] = useState(false);
   const [chartType, setChartType] = useState('line');
   const [timeRange, setTimeRange] = useState('5m'); // 5 minutes
+  const [serverStatus, setServerStatus] = useState({ 
+    isActive: false, 
+    lastActivity: null,
+    consecutiveEmptyFetches: 0
+  });
+
+  // Function to check if server is active based on data timestamps
+  const checkServerStatus = (data) => {
+    const now = Date.now();
+    
+    // If we have data
+    if (data && data.length > 0) {
+      // Get the most recent data point
+      const latestReading = data[0];
+      const latestTimestamp = latestReading.timestamp instanceof Date 
+        ? latestReading.timestamp.getTime() 
+        : new Date(latestReading.timestamp).getTime();
+      
+      // Server considered active if latest reading is within the last 30 seconds
+      // Adjust this threshold based on expected data frequency
+      const isActive = (now - latestTimestamp) < 30000;
+      
+      // Update server status
+      setServerStatus({
+        isActive: isActive,
+        lastActivity: latestTimestamp,
+        consecutiveEmptyFetches: 0 // Reset counter when we get data
+      });
+      
+      return isActive;
+    } else {
+      // If no data, increment consecutive empty fetches
+      setServerStatus(prev => ({
+        ...prev,
+        isActive: false,
+        consecutiveEmptyFetches: prev.consecutiveEmptyFetches + 1
+      }));
+      
+      return false;
+    }
+  };
 
   useEffect(() => {
     console.log(`Setting up polling with refresh interval: ${refreshInterval} seconds`);
@@ -25,6 +66,7 @@ export default function Dashboard() {
       setAccelerometerData(data);
       setLoading(false);
       setLastUpdated(new Date());
+      checkServerStatus(data);
     });
 
     // Start polling for data with the current refresh interval
@@ -74,6 +116,14 @@ export default function Dashboard() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Accelerometer Dashboard</h1>
         <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <div className={`w-3 h-3 rounded-full ${serverStatus.isActive ? 'bg-green-500' : 'bg-red-500'}`}></div>
+            <div className="text-sm text-gray-600">
+              {serverStatus.isActive 
+                ? 'Server active' 
+                : 'Server inactive'}
+            </div>
+          </div>
           <div className="text-sm text-gray-600">
             {lastUpdated ? `Last updated: ${lastUpdated.toLocaleTimeString()}` : 'Loading...'}
           </div>
@@ -115,6 +165,30 @@ export default function Dashboard() {
           >
             Retry
           </button>
+        </div>
+      ) : !serverStatus.isActive && serverStatus.consecutiveEmptyFetches > 2 ? (
+        <div className="text-center p-8 bg-yellow-50 text-yellow-800 rounded-lg mb-8">
+          <div className="flex items-center justify-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 mr-2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+            <h3 className="text-xl font-bold">Data Access Issue</h3>
+          </div>
+          <p>Unable to access accelerometer data. This could be due to one of the following reasons:</p>
+          <ul className="mt-2 list-disc list-inside text-left mb-4">
+            <li>The API server is not running or not sending data to Firebase</li>
+            <li>Firebase database permission rules need to be updated</li>
+            <li>There may be network connectivity issues</li>
+          </ul>
+          <div className="mt-4 bg-white p-4 rounded-md text-left shadow-sm">
+            <p className="font-mono text-sm mb-2">Last data update: {serverStatus.lastActivity ? new Date(serverStatus.lastActivity).toLocaleTimeString() : 'Never'}</p>
+            <p className="font-mono text-sm">
+              If you're an administrator, please check:
+              <br/>1. API server is running
+              <br/>2. Firebase Realtime Database rules allow reading from simulator_user path
+              <br/>3. Firebase project is properly configured in the app
+            </p>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">

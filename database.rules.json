@@ -2,8 +2,10 @@
   "rules": {
     "users": {
       "simulator_user": {
+        ".read": "auth != null",
         "accelerometer_readings": {
-          ".indexOn": ["timestamp"]
+          ".indexOn": ["timestamp"],
+          ".read": "auth != null"
         }
       },
       "$uid": {
