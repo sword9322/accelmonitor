@@ -11,7 +11,7 @@ export default function RegisterForm() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const { register } = useAuth();
+  const { signup } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,7 +33,7 @@ export default function RegisterForm() {
     }
 
     try {
-      await register(email, password, displayName);
+      await signup(email, password, displayName);
     } catch (error) {
       console.error('Registration error:', error);
       setErrorMessage(
