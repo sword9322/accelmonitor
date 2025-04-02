@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AccelerometerChart from './AccelerometerChart';
+import AxisChart from './AxisChart';
 import SettingsPanel from './SettingsPanel';
 import accelerometerService from '../services/accelerometerService';
 
@@ -261,13 +262,51 @@ export default function Dashboard() {
       )}
 
       <div className="card p-6 mb-8">
-        <h2 className="text-xl font-semibold mb-4">Accelerometer Data</h2>
+        <h2 className="text-xl font-semibold mb-4">Combined Accelerometer Data</h2>
         <AccelerometerChart 
           data={accelerometerData} 
           chartType={chartType}
           timeRange={timeRange}
         />
       </div>
+
+      {/* Individual Axis Charts */}
+      {!loading && accelerometerData.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="card p-4">
+            <h2 className="text-lg font-semibold mb-2">X-Axis Variations</h2>
+            <AxisChart 
+              data={accelerometerData} 
+              axis="x" 
+              color="rgb(255, 99, 132)" 
+              timeRange={timeRange}
+              title="X-Axis Acceleration"
+            />
+          </div>
+          
+          <div className="card p-4">
+            <h2 className="text-lg font-semibold mb-2">Y-Axis Variations</h2>
+            <AxisChart 
+              data={accelerometerData} 
+              axis="y" 
+              color="rgb(75, 192, 192)" 
+              timeRange={timeRange}
+              title="Y-Axis Acceleration"
+            />
+          </div>
+          
+          <div className="card p-4">
+            <h2 className="text-lg font-semibold mb-2">Z-Axis Variations</h2>
+            <AxisChart 
+              data={accelerometerData} 
+              axis="z" 
+              color="rgb(53, 162, 235)" 
+              timeRange={timeRange}
+              title="Z-Axis Acceleration"
+            />
+          </div>
+        </div>
+      )}
 
       <div className="card p-6">
         <h2 className="text-xl font-semibold mb-4">Recent Readings</h2>
