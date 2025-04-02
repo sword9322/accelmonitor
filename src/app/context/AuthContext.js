@@ -6,7 +6,8 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  updateProfile
 } from 'firebase/auth';
 import { auth } from '../firebase/config';
 
@@ -15,7 +16,11 @@ const AuthContext = createContext();
 
 // Custom hook to use the auth context
 export const useAuth = () => {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
 
 // Auth context provider component
@@ -24,23 +29,48 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // Sign up function
-  const signup = (email, password) => {
-    return createUserWithEmailAndPassword(auth, email, password);
+  const signup = async (email, password, displayName) => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      if (displayName) {
+        await updateProfile(userCredential.user, { displayName });
+      }
+      return userCredential.user;
+    } catch (error) {
+      console.error('Signup error:', error);
+      throw error;
+    }
   };
 
   // Login function
-  const login = (email, password) => {
-    return signInWithEmailAndPassword(auth, email, password);
+  const login = async (email, password) => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      return userCredential.user;
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
   };
 
   // Logout function
-  const logout = () => {
-    return signOut(auth);
+  const logout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('Logout error:', error);
+      throw error;
+    }
   };
 
   // Reset password function
-  const resetPassword = (email) => {
-    return sendPasswordResetEmail(auth, email);
+  const resetPassword = async (email) => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (error) {
+      console.error('Password reset error:', error);
+      throw error;
+    }
   };
 
   // Effect to set up auth state listener
@@ -61,7 +91,8 @@ export const AuthProvider = ({ children }) => {
     signup,
     login,
     logout,
-    resetPassword
+    resetPassword,
+    register: signup
   };
 
   return (

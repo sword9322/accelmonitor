@@ -1,0 +1,23 @@
+{
+  "rules": {
+    "users": {
+      "simulator_user": {
+        "accelerometer_readings": {
+          ".indexOn": ["timestamp"]
+        }
+      },
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid",
+        "accelerometer_readings": {
+          ".indexOn": ["timestamp"]
+        }
+      }
+    },
+    "accelerometer_readings": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      ".indexOn": ["timestamp", "userId"]
+    }
+  }
+} 
