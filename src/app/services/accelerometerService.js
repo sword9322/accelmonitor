@@ -1,4 +1,4 @@
-import { getDatabase, ref, push, query, orderByChild, limitToLast, get, set, onValue } from 'firebase/database';
+import { getDatabase, ref, push, query, orderByChild, limitToLast, get, set, onValue, remove } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
 import { app } from '../firebase/config';
 
@@ -38,17 +38,25 @@ const accelerometerService = {
       }
     }
 
-    console.log(`Starting accelerometer polling with ${delay}ms interval`);
-    accelerometerService._pollingDelay = delay;
+    // Ensure minimum polling delay to prevent performance issues
+    const safeDelay = Math.max(100, delay); // Minimum 100ms polling interval
+    
+    console.log(`Starting accelerometer polling with ${safeDelay}ms interval`);
+    accelerometerService._pollingDelay = safeDelay;
     
     // Initial fetch
     accelerometerService._fetchAndNotify();
     
     // Set up interval for continuous fetching
     accelerometerService._pollingInterval = setInterval(() => {
-      console.log(`Polling data (interval: ${accelerometerService._pollingDelay}ms) at ${new Date().toLocaleTimeString()}`);
+      // For high-frequency polling (less than 500ms), use a more concise log
+      if (safeDelay < 500) {
+        console.log(`Fast poll: ${new Date().toLocaleTimeString()}`);
+      } else {
+        console.log(`Polling data (interval: ${accelerometerService._pollingDelay}ms) at ${new Date().toLocaleTimeString()}`);
+      }
       accelerometerService._fetchAndNotify();
-    }, delay); // Use the delay parameter directly here
+    }, safeDelay);
     
     return () => accelerometerService.stopPolling();
   },
@@ -361,6 +369,44 @@ const accelerometerService = {
         console.error('Firebase error details:', error.code, error.message);
         throw error;
       }
+    }
+  },
+
+  /**
+   * Clear all simulator data from Firebase
+   * @returns {Promise<boolean>} - True if successful, false otherwise
+   */
+  clearSimulatorData: async () => {
+    try {
+      console.log('Clearing all simulator readings from Firebase');
+      
+      // Create reference to simulator readings
+      const simulatorRef = ref(database, `users/${SIMULATOR_USER_ID}/accelerometer_readings`);
+      
+      // Remove all data at this reference
+      await remove(simulatorRef);
+      
+      console.log('Successfully cleared all simulator readings from Firebase');
+      
+      // Reset the local data as well
+      accelerometerService._lastData = [];
+      accelerometerService._dataBuffer = [];
+      accelerometerService._lastFetchTimestamp = 0;
+      
+      // Notify subscribers of empty data
+      accelerometerService._subscribers.forEach(callback => {
+        try {
+          callback([]);
+        } catch (callbackError) {
+          console.error('Error in subscriber callback:', callbackError);
+        }
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error clearing simulator readings from Firebase:', error);
+      console.error('Firebase error details:', error.code, error.message);
+      return false;
     }
   },
 

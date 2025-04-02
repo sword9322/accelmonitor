@@ -13,13 +13,16 @@ export default function SettingsPanel({
 }) {
   const [isSaving, setIsSaving] = useState(false);
   
-  // Update frequency options in seconds
+  // Update frequency options
   const updateFrequencyOptions = [
+    { label: 'Live (200ms)', value: 0.2 },
+    { label: 'Fast (500ms)', value: 0.5 },
     { label: '1 second', value: 1 },
     { label: '2 seconds', value: 2 },
-    { label: '3 seconds', value: 3 },
     { label: '5 seconds', value: 5 },
     { label: '10 seconds', value: 10 },
+    { label: '30 seconds', value: 30 },
+    { label: '1 minute', value: 60 }
   ];
 
   // Chart type options
@@ -38,7 +41,7 @@ export default function SettingsPanel({
 
   // Handle update frequency change
   const handleUpdateFrequencyChange = (e) => {
-    const newInterval = parseInt(e.target.value, 10);
+    const newInterval = parseFloat(e.target.value);
     setSelectedInterval(newInterval);
   };
 
