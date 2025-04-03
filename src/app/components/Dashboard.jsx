@@ -280,7 +280,7 @@ export default function Dashboard() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Accelerometer Monitor</h1>
+        
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <div className={`w-3 h-3 rounded-full ${serverStatus.isActive ? 'bg-green-500' : 'bg-red-500'}`}></div>
@@ -388,7 +388,7 @@ export default function Dashboard() {
           <div className="w-12 h-12 border-t-4 border-primary rounded-full animate-spin"></div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-4 mb-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <h3 className="text-xl font-semibold mb-4 text-white">Statistics</h3>
             <div className="space-y-4">
@@ -443,20 +443,6 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold mb-1 text-white">Server Status</h3>
-              <div className="flex items-center text-sm text-gray-500">
-                <div className={`w-3 h-3 rounded-full mr-2 ${serverStatus.isActive ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                <span>{serverStatus.isActive ? 'Active' : 'Inactive'}</span>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-sm text-gray-500">Last update: {lastUpdated ? new Date(lastUpdated).toLocaleTimeString() : 'Never'}</div>
-              <div className="text-sm text-gray-500">Refresh rate: {refreshInterval} seconds</div>
             </div>
           </div>
         </div>
