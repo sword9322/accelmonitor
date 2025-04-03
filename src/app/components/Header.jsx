@@ -22,7 +22,7 @@ export default function Header() {
   };
   
   return (
-    <header className="border-b py-4 bg-white">
+    <header className="fixed top-0 left-0 right-0 border-b py-4 bg-white z-10 shadow-sm">
       <div className="container mx-auto px-4 flex items-center justify-between">
         <Link href="/" className="text-xl font-bold flex items-center gap-2">
           <div className="bg-blue-500 text-white p-1 rounded">
