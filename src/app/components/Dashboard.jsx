@@ -42,7 +42,7 @@ export default function Dashboard() {
   const [predictedData, setPredictedData] = useState([]);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [showAlarmPanel, setShowAlarmPanel] = useState(true);
-  const [alarmsEnabled, setAlarmsEnabled] = useState(true);
+  const [alarmsEnabled, setAlarmsEnabled] = useState(false);
   const [showStatistics, setShowStatistics] = useState(true);
 
   // Calculate statistics from accelerometer data
@@ -308,7 +308,167 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* Alarm Panel with toggle functionality */}
+      {showSettings && (
+        <SettingsPanel 
+          refreshInterval={refreshInterval}
+          onRefreshIntervalChange={handleRefreshIntervalChange}
+          chartType={chartType}
+          onChartTypeChange={handleChartTypeChange}
+          timeRange={timeRange}
+          onTimeRangeChange={handleTimeRangeChange}
+          alarmThresholds={alarmThresholds}
+          onAlarmThresholdsChange={handleAlarmThresholdsChange}
+          predictionEnabled={predictionEnabled}
+          onPredictionEnabledChange={handlePredictionEnabledChange}
+          predictionMethod={predictionMethod}
+          onPredictionMethodChange={handlePredictionMethodChange}
+          onClose={toggleSettings}
+          onGenerateReport={handleGenerateReport}
+          onClearDatabase={handleClearDatabase}
+          isClearing={isClearing}
+          clearSuccess={clearSuccess}
+        />
+      )}
+
+      {/* 1. Combined Accelerometer Data */}
+      <div className="card p-6 mb-8">
+        <h2 className="text-xl font-semibold mb-4">
+          Combined Accelerometer Data
+          {predictionEnabled && (
+            <span className="ml-2 text-sm font-normal text-blue-500">
+              (with {predictionMethod === 'linear' ? 'Linear' : 'Exponential'} Prediction)
+            </span>
+          )}
+        </h2>
+        <AccelerometerChart 
+          data={accelerometerData} 
+          predictedData={predictedData}
+          chartType={chartType}
+          timeRange={timeRange}
+        />
+      </div>
+
+      {/* 2. Individual Axis Charts */}
+      {!loading && accelerometerData.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="card p-4">
+            <h2 className="text-lg font-semibold mb-2">X-Axis Variations</h2>
+            <AxisChart 
+              data={accelerometerData} 
+              axis="x" 
+              color="rgb(255, 99, 132)" 
+              timeRange={timeRange}
+              title="X-Axis Acceleration"
+            />
+          </div>
+          
+          <div className="card p-4">
+            <h2 className="text-lg font-semibold mb-2">Y-Axis Variations</h2>
+            <AxisChart 
+              data={accelerometerData} 
+              axis="y" 
+              color="rgb(75, 192, 192)" 
+              timeRange={timeRange}
+              title="Y-Axis Acceleration"
+            />
+          </div>
+          
+          <div className="card p-4">
+            <h2 className="text-lg font-semibold mb-2">Z-Axis Variations</h2>
+            <AxisChart 
+              data={accelerometerData} 
+              axis="z" 
+              color="rgb(53, 162, 235)" 
+              timeRange={timeRange}
+              title="Z-Axis Acceleration"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* 3. Statistics */}
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-2 bg-gray-100 p-4 rounded-lg">
+          <div className="flex items-center gap-2">
+            <button 
+              className="text-gray-500 hover:text-gray-700 mr-1" 
+              onClick={toggleStatistics}
+              aria-label="Toggle statistics panel"
+            >
+              {showStatistics ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                </svg>
+              )}
+            </button>
+            <h2 className="text-xl font-semibold">Statistics</h2>
+          </div>
+        </div>
+        
+        {showStatistics && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-medium mb-2 text-white">X Axis</h4>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <span className="text-sm text-gray-500">Min</span>
+                    <p className="font-mono text-white">{stats.x.min.toFixed(4)}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Max</span>
+                    <p className="font-mono text-white">{stats.x.max.toFixed(4)}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Avg</span>
+                    <p className="font-mono text-white">{stats.x.avg.toFixed(4)}</p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2 text-white">Y Axis</h4>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <span className="text-sm text-gray-500">Min</span>
+                    <p className="font-mono text-white">{stats.y.min.toFixed(4)}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Max</span>
+                    <p className="font-mono text-white">{stats.y.max.toFixed(4)}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Avg</span>
+                    <p className="font-mono text-white">{stats.y.avg.toFixed(4)}</p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2 text-white">Z Axis</h4>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <span className="text-sm text-gray-500">Min</span>
+                    <p className="font-mono text-white">{stats.z.min.toFixed(4)}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Max</span>
+                    <p className="font-mono text-white">{stats.z.max.toFixed(4)}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Avg</span>
+                    <p className="font-mono text-white">{stats.z.avg.toFixed(4)}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 4. Alarm Panel */}
       {!loading && (
         <div className="mb-6">
           <div className="flex justify-between items-center mb-2 bg-gray-100 p-4 rounded-lg">
@@ -360,170 +520,6 @@ export default function Dashboard() {
               onToggleAlarms={handleToggleAlarms}
             />
           )}
-        </div>
-      )}
-
-      {showSettings && (
-        <SettingsPanel 
-          refreshInterval={refreshInterval}
-          onRefreshIntervalChange={handleRefreshIntervalChange}
-          chartType={chartType}
-          onChartTypeChange={handleChartTypeChange}
-          timeRange={timeRange}
-          onTimeRangeChange={handleTimeRangeChange}
-          alarmThresholds={alarmThresholds}
-          onAlarmThresholdsChange={handleAlarmThresholdsChange}
-          predictionEnabled={predictionEnabled}
-          onPredictionEnabledChange={handlePredictionEnabledChange}
-          predictionMethod={predictionMethod}
-          onPredictionMethodChange={handlePredictionMethodChange}
-          onClose={toggleSettings}
-          onGenerateReport={handleGenerateReport}
-          onClearDatabase={handleClearDatabase}
-          isClearing={isClearing}
-          clearSuccess={clearSuccess}
-        />
-      )}
-
-      {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="w-12 h-12 border-t-4 border-primary rounded-full animate-spin"></div>
-        </div>
-      ) : (
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-2 bg-gray-100 p-4 rounded-lg">
-            <div className="flex items-center gap-2">
-              <button 
-                className="text-gray-500 hover:text-gray-700 mr-1" 
-                onClick={toggleStatistics}
-                aria-label="Toggle statistics panel"
-              >
-                {showStatistics ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                  </svg>
-                )}
-              </button>
-              <h2 className="text-xl font-semibold">Statistics</h2>
-            </div>
-          </div>
-          
-          {showStatistics && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium mb-2 text-white">X Axis</h4>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div>
-                      <span className="text-sm text-gray-500">Min</span>
-                      <p className="font-mono text-white">{stats.x.min.toFixed(4)}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm text-gray-500">Max</span>
-                      <p className="font-mono text-white">{stats.x.max.toFixed(4)}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm text-gray-500">Avg</span>
-                      <p className="font-mono text-white">{stats.x.avg.toFixed(4)}</p>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-medium mb-2 text-white">Y Axis</h4>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div>
-                      <span className="text-sm text-gray-500">Min</span>
-                      <p className="font-mono text-white">{stats.y.min.toFixed(4)}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm text-gray-500">Max</span>
-                      <p className="font-mono text-white">{stats.y.max.toFixed(4)}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm text-gray-500">Avg</span>
-                      <p className="font-mono text-white">{stats.y.avg.toFixed(4)}</p>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-medium mb-2 text-white">Z Axis</h4>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div>
-                      <span className="text-sm text-gray-500">Min</span>
-                      <p className="font-mono text-white">{stats.z.min.toFixed(4)}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm text-gray-500">Max</span>
-                      <p className="font-mono text-white">{stats.z.max.toFixed(4)}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm text-gray-500">Avg</span>
-                      <p className="font-mono text-white">{stats.z.avg.toFixed(4)}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      <div className="card p-6 mb-8">
-        <h2 className="text-xl font-semibold mb-4">
-          Combined Accelerometer Data
-          {predictionEnabled && (
-            <span className="ml-2 text-sm font-normal text-blue-500">
-              (with {predictionMethod === 'linear' ? 'Linear' : 'Exponential'} Prediction)
-            </span>
-          )}
-        </h2>
-        <AccelerometerChart 
-          data={accelerometerData} 
-          predictedData={predictedData}
-          chartType={chartType}
-          timeRange={timeRange}
-        />
-      </div>
-
-      {/* Individual Axis Charts */}
-      {!loading && accelerometerData.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="card p-4">
-            <h2 className="text-lg font-semibold mb-2">X-Axis Variations</h2>
-            <AxisChart 
-              data={accelerometerData} 
-              axis="x" 
-              color="rgb(255, 99, 132)" 
-              timeRange={timeRange}
-              title="X-Axis Acceleration"
-            />
-          </div>
-          
-          <div className="card p-4">
-            <h2 className="text-lg font-semibold mb-2">Y-Axis Variations</h2>
-            <AxisChart 
-              data={accelerometerData} 
-              axis="y" 
-              color="rgb(75, 192, 192)" 
-              timeRange={timeRange}
-              title="Y-Axis Acceleration"
-            />
-          </div>
-          
-          <div className="card p-4">
-            <h2 className="text-lg font-semibold mb-2">Z-Axis Variations</h2>
-            <AxisChart 
-              data={accelerometerData} 
-              axis="z" 
-              color="rgb(53, 162, 235)" 
-              timeRange={timeRange}
-              title="Z-Axis Acceleration"
-            />
-          </div>
         </div>
       )}
 
