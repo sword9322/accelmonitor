@@ -425,9 +425,9 @@ const accelerometerService = {
   calculateStatistics: (data) => {
     if (!data || data.length === 0) {
       return {
-        x: { min: null, max: null, avg: null, stdDev: null },
-        y: { min: null, max: null, avg: null, stdDev: null },
-        z: { min: null, max: null, avg: null, stdDev: null },
+        x: { min: 0, max: 0, avg: 0, stdDev: 0 },
+        y: { min: 0, max: 0, avg: 0, stdDev: 0 },
+        z: { min: 0, max: 0, avg: 0, stdDev: 0 },
         sampleCount: 0
       };
     }
@@ -439,6 +439,10 @@ const accelerometerService = {
 
     // Calculate statistics for a set of values
     const calculateAxisStats = (values) => {
+      if (values.length === 0) {
+        return { min: 0, max: 0, avg: 0, stdDev: 0 };
+      }
+
       const min = Math.min(...values);
       const max = Math.max(...values);
       const sum = values.reduce((acc, val) => acc + val, 0);
@@ -450,10 +454,10 @@ const accelerometerService = {
       const stdDev = Math.sqrt(avgSquaredDiff);
       
       return {
-        min: isFinite(min) ? min.toFixed(4) : null,
-        max: isFinite(max) ? max.toFixed(4) : null,
-        avg: isFinite(avg) ? avg.toFixed(4) : null,
-        stdDev: isFinite(stdDev) ? stdDev.toFixed(4) : null
+        min: Number(min.toFixed(4)),
+        max: Number(max.toFixed(4)),
+        avg: Number(avg.toFixed(4)),
+        stdDev: Number(stdDev.toFixed(4))
       };
     };
 

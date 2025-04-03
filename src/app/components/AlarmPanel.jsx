@@ -89,8 +89,8 @@ export default function AlarmPanel({ activeAlarms, alarmHistory, onClearAlarms }
                     <span className="text-sm text-gray-600">{formatTime(alarm.timestamp)}</span>
                   </div>
                   <div className="mt-1 text-sm">
-                    Value: <span className="font-medium">{alarm.value.toFixed(3)}</span> | 
-                    Threshold: <span className="font-medium">{alarm.threshold.toFixed(3)}</span>
+                    Value: <span className="font-medium">{typeof alarm.value === 'number' ? alarm.value.toFixed(4) : 'N/A'}</span> | 
+                    Threshold: <span className="font-medium">{typeof alarm.threshold === 'number' ? alarm.threshold.toFixed(4) : 'N/A'}</span>
                   </div>
                 </div>
               ))}
@@ -120,8 +120,8 @@ export default function AlarmPanel({ activeAlarms, alarmHistory, onClearAlarms }
                     <tr key={alarm.id} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
                       <td className="py-2 text-sm">{formatTime(alarm.timestamp)}</td>
                       <td className="py-2 text-sm">{formatAlarmType(alarm.type, alarm.axis)}</td>
-                      <td className="py-2 text-sm">{alarm.value.toFixed(3)}</td>
-                      <td className="py-2 text-sm">{alarm.threshold.toFixed(3)}</td>
+                      <td className="py-2 text-sm">{typeof alarm.value === 'number' ? alarm.value.toFixed(4) : 'N/A'}</td>
+                      <td className="py-2 text-sm">{typeof alarm.threshold === 'number' ? alarm.threshold.toFixed(4) : 'N/A'}</td>
                     </tr>
                   ))}
                 </tbody>

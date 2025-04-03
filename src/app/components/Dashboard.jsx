@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AccelerometerChart from './AccelerometerChart';
 import AxisChart from './AxisChart';
@@ -16,11 +16,11 @@ export default function Dashboard() {
   const [accelerometerData, setAccelerometerData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [refreshInterval, setRefreshInterval] = useState(5); // seconds
+  const [refreshInterval, setRefreshInterval] = useState(1000);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [chartType, setChartType] = useState('line');
-  const [timeRange, setTimeRange] = useState('5m'); // 5 minutes
+  const [timeRange, setTimeRange] = useState('5m');
   const [serverStatus, setServerStatus] = useState({ 
     isActive: false, 
     lastActivity: null,
@@ -33,98 +33,92 @@ export default function Dashboard() {
   const [activeAlarms, setActiveAlarms] = useState([]);
   const [alarmHistory, setAlarmHistory] = useState([]);
   const [alarmThresholds, setAlarmThresholds] = useState({
-    x: { min: -10, max: 10 },
-    y: { min: -10, max: 10 },
-    z: { min: -10, max: 10 }
+    x: { min: -1, max: 1 },
+    y: { min: -1, max: 1 },
+    z: { min: -1, max: 1 }
   });
   const [predictionEnabled, setPredictionEnabled] = useState(false);
   const [predictionMethod, setPredictionMethod] = useState('linear');
   const [predictedData, setPredictedData] = useState([]);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+
+  // Calculate statistics from accelerometer data
+  const stats = useMemo(() => {
+    if (!accelerometerData || accelerometerData.length === 0) {
+      return {
+        x: { min: 0, max: 0, avg: 0 },
+        y: { min: 0, max: 0, avg: 0 },
+        z: { min: 0, max: 0, avg: 0 }
+      };
+    }
+    return accelerometerService.calculateStatistics(accelerometerData);
+  }, [accelerometerData]);
   
   // Initialize alarm service with stored thresholds
   useEffect(() => {
-    // Get stored thresholds from localStorage or use defaults
-    const storedThresholds = alarmService.getThresholds();
-    setAlarmThresholds(storedThresholds);
+    const storedThresholds = localStorage.getItem('alarmThresholds');
+    if (storedThresholds) {
+      try {
+        setAlarmThresholds(JSON.parse(storedThresholds));
+      } catch (error) {
+        console.error('Error parsing stored alarm thresholds:', error);
+      }
+    }
   }, []);
   
+  // Set up data subscription
   useEffect(() => {
-    // Set up data polling when the component mounts
-    const fetchData = async () => {
+    let unsubscribe;
+    
+    const setupSubscription = async () => {
       try {
         // Log with millisecond precision for sub-second intervals
-        const intervalMs = refreshInterval * 1000;
-        console.log(`Setting up data subscription with ${refreshInterval} second interval (${intervalMs}ms) at ${new Date().toLocaleTimeString()}`);
+        const intervalMs = refreshInterval;
+        console.log(`Setting up data subscription with ${refreshInterval} ms interval (${intervalMs}ms) at ${new Date().toLocaleTimeString()}`);
         
         // Set up the subscription
-        const unsubscribe = accelerometerService.subscribe(newData => {
-          if (newData && newData.length > 0) {
-            setAccelerometerData(newData);
+        unsubscribe = accelerometerService.subscribe(data => {
+          if (data && data.length > 0) {
+            setAccelerometerData(data);
             setLastUpdated(new Date());
             setLoading(false);
-            
-            // Update server status
-            setServerStatus({
-              isActive: true,
-              lastActivity: new Date(),
-              consecutiveEmptyFetches: 0
-            });
+            setError(null);
             
             // Check for alarms
-            const triggeredAlarms = alarmService.checkThresholds(newData);
-            if (triggeredAlarms.length > 0) {
-              setActiveAlarms(alarmService.getActiveAlarms());
-              setAlarmHistory(alarmService.getAlarmHistory());
-              
-              // Show browser notification for new alarms
-              triggeredAlarms.forEach(alarm => {
-                alarmService.showNotification(alarm);
-              });
+            const newAlarms = alarmService.checkAlarms(data[0], alarmThresholds);
+            if (newAlarms.length > 0) {
+              setActiveAlarms(prev => [...newAlarms, ...prev]);
+              setAlarmHistory(prev => [...newAlarms, ...prev]);
             }
             
             // Generate predictions if enabled
-            if (predictionEnabled && newData.length >= 5) {
-              const predictions = predictionMethod === 'linear'
-                ? predictionService.predictLinear(newData)
-                : predictionService.predictExponentialSmoothing(newData);
-              
+            if (predictionEnabled) {
+              const predictions = predictionService.generatePredictions(data, predictionMethod);
               setPredictedData(predictions);
-            } else {
-              setPredictedData([]);
             }
-          } else if (newData && newData.length === 0) {
-            setServerStatus(prevStatus => ({
-              ...prevStatus,
-              consecutiveEmptyFetches: prevStatus.consecutiveEmptyFetches + 1,
-              isActive: prevStatus.consecutiveEmptyFetches < 5 // Consider inactive after 5 empty fetches
-            }));
           }
         });
         
-        // Start polling with specified interval (convert seconds to ms)
-        accelerometerService.startPolling(refreshInterval * 1000);
+        // Start polling with specified interval
+        accelerometerService.startPolling(refreshInterval);
         
         return unsubscribe;
-      } catch (err) {
-        console.error('Error setting up data subscription:', err);
-        setError(err.message);
+      } catch (error) {
+        console.error('Error setting up data subscription:', error);
+        setError(error.message);
         setLoading(false);
-        return () => {};
       }
     };
     
-    const unsubscribe = fetchData();
+    setupSubscription();
     
-    // Clean up on unmount
     return () => {
-      console.log('Cleaning up data subscription');
-      if (typeof unsubscribe === 'function') {
+      if (unsubscribe) {
         unsubscribe();
       }
       accelerometerService.stopPolling();
     };
-  }, [refreshInterval, predictionEnabled, predictionMethod]);
+  }, [refreshInterval, alarmThresholds, predictionEnabled, predictionMethod]);
   
   const handleRefreshIntervalChange = (seconds) => {
     // Make sure we're handling seconds as a float
@@ -236,47 +230,26 @@ export default function Dashboard() {
     }
   };
 
-  // Calculate basic statistics from the data
-  const calculateStats = () => {
-    if (!accelerometerData || accelerometerData.length === 0) {
-      return { 
-        x: { min: null, max: null, avg: null, stdDev: null }, 
-        y: { min: null, max: null, avg: null, stdDev: null }, 
-        z: { min: null, max: null, avg: null, stdDev: null } 
-      };
-    }
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="w-16 h-16 border-t-4 border-blue-500 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
-    const stats = accelerometerService.calculateStatistics(accelerometerData);
-    return stats;
-  };
-  
-  // Combine actual and predicted data for charts (if prediction is enabled)
-  const getChartData = () => {
-    if (predictionEnabled && predictedData.length > 0) {
-      // Create a copy of the data to avoid modifying the original
-      const combinedData = [...accelerometerData];
-      
-      // Add predicted data with a flag to distinguish it
-      predictedData.forEach(point => {
-        combinedData.push({
-          ...point,
-          isPrediction: true  // Flag to style differently in charts
-        });
-      });
-      
-      return combinedData;
-    }
-    
-    return accelerometerData;
-  };
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-red-500">Error: {error}</div>
+      </div>
+    );
+  }
 
-  const stats = calculateStats();
-  const chartData = getChartData();
-  
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Accelerometer Dashboard</h1>
+        <h1 className="text-2xl font-bold">Accelerometer Monitor</h1>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <div className={`w-3 h-3 rounded-full ${serverStatus.isActive ? 'bg-green-500' : 'bg-red-500'}`}></div>
@@ -374,71 +347,72 @@ export default function Dashboard() {
           <div className="w-12 h-12 border-t-4 border-primary rounded-full animate-spin"></div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <div className="card p-4">
-            <h2 className="text-lg font-semibold mb-2">X-Axis</h2>
-            <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h3 className="text-xl font-semibold mb-4">Statistics</h3>
+            <div className="space-y-4">
               <div>
-                <p className="text-gray-600">Min</p>
-                <p className="text-xl">{stats.x?.min !== null && stats.x?.min !== undefined ? stats.x.min : 'N/A'}</p>
+                <h4 className="font-medium mb-2">X Axis</h4>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <span className="text-sm text-gray-500">Min</span>
+                    <p className="font-mono">{stats.x.min.toFixed(4)}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Max</span>
+                    <p className="font-mono">{stats.x.max.toFixed(4)}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Avg</span>
+                    <p className="font-mono">{stats.x.avg.toFixed(4)}</p>
+                  </div>
+                </div>
               </div>
               <div>
-                <p className="text-gray-600">Max</p>
-                <p className="text-xl">{stats.x?.max !== null && stats.x?.max !== undefined ? stats.x.max : 'N/A'}</p>
+                <h4 className="font-medium mb-2">Y Axis</h4>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <span className="text-sm text-gray-500">Min</span>
+                    <p className="font-mono">{stats.y.min.toFixed(4)}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Max</span>
+                    <p className="font-mono">{stats.y.max.toFixed(4)}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Avg</span>
+                    <p className="font-mono">{stats.y.avg.toFixed(4)}</p>
+                  </div>
+                </div>
               </div>
               <div>
-                <p className="text-gray-600">Avg</p>
-                <p className="text-xl">{stats.x?.avg !== null && stats.x?.avg !== undefined ? stats.x.avg : 'N/A'}</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Current</p>
-                <p className="text-xl">{accelerometerData[0]?.x !== undefined ? accelerometerData[0].x.toFixed(3) : 'N/A'}</p>
+                <h4 className="font-medium mb-2">Z Axis</h4>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <span className="text-sm text-gray-500">Min</span>
+                    <p className="font-mono">{stats.z.min.toFixed(4)}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Max</span>
+                    <p className="font-mono">{stats.z.max.toFixed(4)}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-500">Avg</span>
+                    <p className="font-mono">{stats.z.avg.toFixed(4)}</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-          
-          <div className="card p-4">
-            <h2 className="text-lg font-semibold mb-2">Y-Axis</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-gray-600">Min</p>
-                <p className="text-xl">{stats.y?.min !== null && stats.y?.min !== undefined ? stats.y.min : 'N/A'}</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Max</p>
-                <p className="text-xl">{stats.y?.max !== null && stats.y?.max !== undefined ? stats.y.max : 'N/A'}</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Avg</p>
-                <p className="text-xl">{stats.y?.avg !== null && stats.y?.avg !== undefined ? stats.y.avg : 'N/A'}</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Current</p>
-                <p className="text-xl">{accelerometerData[0]?.y !== undefined ? accelerometerData[0].y.toFixed(3) : 'N/A'}</p>
-              </div>
+
+          <div className="card p-6">
+            <h2 className="text-xl font-semibold mb-4">Server Status</h2>
+            <div className="flex items-center gap-2 mb-4">
+              <div className={`w-3 h-3 rounded-full ${serverStatus.isActive ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span>{serverStatus.isActive ? 'Active' : 'Inactive'}</span>
             </div>
-          </div>
-          
-          <div className="card p-4">
-            <h2 className="text-lg font-semibold mb-2">Z-Axis</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-gray-600">Min</p>
-                <p className="text-xl">{stats.z?.min !== null && stats.z?.min !== undefined ? stats.z.min : 'N/A'}</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Max</p>
-                <p className="text-xl">{stats.z?.max !== null && stats.z?.max !== undefined ? stats.z.max : 'N/A'}</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Avg</p>
-                <p className="text-xl">{stats.z?.avg !== null && stats.z?.avg !== undefined ? stats.z.avg : 'N/A'}</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Current</p>
-                <p className="text-xl">{accelerometerData[0]?.z !== undefined ? accelerometerData[0].z.toFixed(3) : 'N/A'}</p>
-              </div>
-            </div>
+            <p>Last Update: {lastUpdated ? new Date(lastUpdated).toLocaleString() : 'Never'}</p>
+            <p>Refresh Rate: {refreshInterval} seconds</p>
           </div>
         </div>
       )}
@@ -453,7 +427,8 @@ export default function Dashboard() {
           )}
         </h2>
         <AccelerometerChart 
-          data={chartData} 
+          data={accelerometerData} 
+          predictedData={predictedData}
           chartType={chartType}
           timeRange={timeRange}
         />
@@ -465,7 +440,7 @@ export default function Dashboard() {
           <div className="card p-4">
             <h2 className="text-lg font-semibold mb-2">X-Axis Variations</h2>
             <AxisChart 
-              data={chartData} 
+              data={accelerometerData} 
               axis="x" 
               color="rgb(255, 99, 132)" 
               timeRange={timeRange}
@@ -476,7 +451,7 @@ export default function Dashboard() {
           <div className="card p-4">
             <h2 className="text-lg font-semibold mb-2">Y-Axis Variations</h2>
             <AxisChart 
-              data={chartData} 
+              data={accelerometerData} 
               axis="y" 
               color="rgb(75, 192, 192)" 
               timeRange={timeRange}
@@ -487,7 +462,7 @@ export default function Dashboard() {
           <div className="card p-4">
             <h2 className="text-lg font-semibold mb-2">Z-Axis Variations</h2>
             <AxisChart 
-              data={chartData} 
+              data={accelerometerData} 
               axis="z" 
               color="rgb(53, 162, 235)" 
               timeRange={timeRange}
@@ -497,52 +472,46 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="card p-6">
-        <h2 className="text-xl font-semibold mb-4">Recent Readings</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h3 className="text-xl font-semibold mb-4">Recent Readings</h3>
         <div className="overflow-x-auto">
-          <table className="w-full table-auto">
+          <table className="min-w-full">
             <thead>
-              <tr className="bg-gray-100 dark:bg-gray-800">
-                <th className="px-4 py-2 text-left text-white">Time</th>
-                <th className="px-4 py-2 text-left text-white">X-Axis</th>
-                <th className="px-4 py-2 text-left text-white">Y-Axis</th>
-                <th className="px-4 py-2 text-left text-white">Z-Axis</th>
-                {predictionEnabled && <th className="px-4 py-2 text-left text-white">Type</th>}
+              <tr className="border-b dark:border-gray-700">
+                <th className="text-left py-2 px-4">Time</th>
+                <th className="text-left py-2 px-4">X</th>
+                <th className="text-left py-2 px-4">Y</th>
+                <th className="text-left py-2 px-4">Z</th>
+                <th className="text-left py-2 px-4">Type</th>
               </tr>
             </thead>
             <tbody>
-              {chartData.slice(0, 10).map((reading, index) => (
-                <tr key={reading.id || index} className={reading.isPrediction ? 'bg-blue-50 dark:bg-blue-900' : 'border-b border-gray-200 dark:border-gray-700'}>
-                  <td className="px-4 py-2">
-                    {reading.timestamp ? 
-                      (reading.timestamp instanceof Date 
-                        ? reading.timestamp.toLocaleTimeString() 
-                        : typeof reading.timestamp === 'number'
-                          ? new Date(reading.timestamp * 1000).toLocaleTimeString()
-                          : 'Unknown') 
-                      : 'Unknown'}
+              {[...predictedData, ...accelerometerData].slice(0, 10).map((reading, index) => (
+                <tr 
+                  key={reading.id || index} 
+                  className={`border-b dark:border-gray-700 ${
+                    predictedData.includes(reading) ? 'text-blue-500' : ''
+                  }`}
+                >
+                  <td className="py-2 px-4">
+                    {reading.timestamp instanceof Date 
+                      ? reading.timestamp.toLocaleString()
+                      : new Date(reading.timestamp).toLocaleString()}
                   </td>
-                  <td className="px-4 py-2">{typeof reading.x === 'number' ? reading.x.toFixed(4) : 'N/A'}</td>
-                  <td className="px-4 py-2">{typeof reading.y === 'number' ? reading.y.toFixed(4) : 'N/A'}</td>
-                  <td className="px-4 py-2">{typeof reading.z === 'number' ? reading.z.toFixed(4) : 'N/A'}</td>
-                  {predictionEnabled && (
-                    <td className="px-4 py-2">
-                      {reading.isPrediction ? (
-                        <span className="text-blue-500">Predicted</span>
-                      ) : (
-                        <span className="text-green-500">Actual</span>
-                      )}
-                    </td>
-                  )}
+                  <td className="py-2 px-4 font-mono">
+                    {typeof reading.x === 'number' ? reading.x.toFixed(4) : 'N/A'}
+                  </td>
+                  <td className="py-2 px-4 font-mono">
+                    {typeof reading.y === 'number' ? reading.y.toFixed(4) : 'N/A'}
+                  </td>
+                  <td className="py-2 px-4 font-mono">
+                    {typeof reading.z === 'number' ? reading.z.toFixed(4) : 'N/A'}
+                  </td>
+                  <td className="py-2 px-4">
+                    {predictedData.includes(reading) ? 'Predicted' : 'Actual'}
+                  </td>
                 </tr>
               ))}
-              {chartData.length === 0 && (
-                <tr>
-                  <td colSpan={predictionEnabled ? "5" : "4"} className="px-4 py-8 text-center text-gray-500">
-                    No data available
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
