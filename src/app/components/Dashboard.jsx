@@ -42,6 +42,7 @@ export default function Dashboard() {
   const [predictedData, setPredictedData] = useState([]);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [showAlarmPanel, setShowAlarmPanel] = useState(true);
+  const [alarmsEnabled, setAlarmsEnabled] = useState(true);
 
   // Calculate statistics from accelerometer data
   const stats = useMemo(() => {
@@ -91,11 +92,13 @@ export default function Dashboard() {
               consecutiveEmptyFetches: 0
             });
             
-            // Check for alarms
-            const newAlarms = alarmService.checkThresholds(data);
-            if (newAlarms.length > 0) {
-              setActiveAlarms(prev => [...newAlarms, ...prev]);
-              setAlarmHistory(prev => [...newAlarms, ...prev]);
+            // Check for alarms only if they're enabled
+            if (alarmsEnabled) {
+              const newAlarms = alarmService.checkThresholds(data);
+              if (newAlarms.length > 0) {
+                setActiveAlarms(prev => [...newAlarms, ...prev]);
+                setAlarmHistory(prev => [...newAlarms, ...prev]);
+              }
             }
             
             // Generate predictions if enabled
@@ -132,7 +135,7 @@ export default function Dashboard() {
       }
       accelerometerService.stopPolling();
     };
-  }, [refreshInterval, alarmThresholds, predictionEnabled, predictionMethod]);
+  }, [refreshInterval, alarmThresholds, predictionEnabled, predictionMethod, alarmsEnabled]);
   
   const handleRefreshIntervalChange = (seconds) => {
     // Make sure we're handling seconds as a float
@@ -168,6 +171,16 @@ export default function Dashboard() {
   const handleClearAlarms = () => {
     alarmService.clearActiveAlarms();
     setActiveAlarms([]);
+  };
+  
+  const handleToggleAlarms = () => {
+    const newEnabledState = !alarmsEnabled;
+    setAlarmsEnabled(newEnabledState);
+    
+    // If we're disabling alarms, clear any active ones
+    if (!newEnabledState) {
+      handleClearAlarms();
+    }
   };
   
   const handlePredictionEnabledChange = (enabled) => {
@@ -295,26 +308,54 @@ export default function Dashboard() {
 
       {/* Alarm Panel with toggle functionality */}
       {!loading && (
-        <div className="mb-6 card p-4">
-          <div className="flex justify-between items-center mb-2 cursor-pointer" onClick={toggleAlarmPanel}>
-            <h2 className="text-xl font-semibold">Alarm Monitor</h2>
-            <button className="text-gray-500 hover:text-gray-700">
-              {showAlarmPanel ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                </svg>
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-2 bg-gray-100 p-4 rounded-lg">
+            <div className="flex items-center gap-2">
+              <button 
+                className="text-gray-500 hover:text-gray-700 mr-1" 
+                onClick={toggleAlarmPanel}
+                aria-label="Toggle alarm panel"
+              >
+                {showAlarmPanel ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </button>
+              <h2 className="text-xl font-semibold">Alarm Monitor</h2>
+              {activeAlarms.length > 0 && (
+                <span className="ml-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {activeAlarms.length}
+                </span>
               )}
-            </button>
+            </div>
+            
+            {/* Alarm Toggle Switch */}
+            <div className="flex items-center">
+              <span className="mr-2 text-sm text-gray-600">{alarmsEnabled ? 'Alerts On' : 'Alerts Off'}</span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={alarmsEnabled}
+                  onChange={handleToggleAlarms}
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
           </div>
+          
           {showAlarmPanel && (
             <AlarmPanel 
               activeAlarms={activeAlarms} 
               alarmHistory={alarmHistory}
               onClearAlarms={handleClearAlarms}
+              alarmsEnabled={alarmsEnabled}
+              onToggleAlarms={handleToggleAlarms}
             />
           )}
         </div>
@@ -405,14 +446,18 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="card p-6">
-            <h2 className="text-xl font-semibold mb-4">Server Status</h2>
-            <div className="flex items-center gap-2 mb-4">
-              <div className={`w-3 h-3 rounded-full ${serverStatus.isActive ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              <span>{serverStatus.isActive ? 'Active' : 'Inactive'}</span>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold mb-1 text-white">Server Status</h3>
+              <div className="flex items-center text-sm text-gray-500">
+                <div className={`w-3 h-3 rounded-full mr-2 ${serverStatus.isActive ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <span>{serverStatus.isActive ? 'Active' : 'Inactive'}</span>
+              </div>
             </div>
-            <p>Last Update: {lastUpdated ? new Date(lastUpdated).toLocaleString() : 'Never'}</p>
-            <p>Refresh Rate: {refreshInterval} seconds</p>
+            <div className="text-right">
+              <div className="text-sm text-gray-500">Last update: {lastUpdated ? new Date(lastUpdated).toLocaleTimeString() : 'Never'}</div>
+              <div className="text-sm text-gray-500">Refresh rate: {refreshInterval} seconds</div>
+            </div>
           </div>
         </div>
       )}
@@ -493,7 +538,7 @@ export default function Dashboard() {
                     predictedData.includes(reading) ? 'text-blue-500' : ''
                   }`}
                 >
-                  <td className="py-2 px-4">
+                  <td className="py-2 px-4 text-white">
                     {reading.timestamp instanceof Date 
                       ? reading.timestamp.toLocaleString()
                       : new Date(reading.timestamp).toLocaleString()}

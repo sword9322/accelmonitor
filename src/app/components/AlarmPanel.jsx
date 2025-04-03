@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 
-export default function AlarmPanel({ activeAlarms, alarmHistory, onClearAlarms }) {
+export default function AlarmPanel({ activeAlarms, alarmHistory, onClearAlarms, alarmsEnabled, onToggleAlarms }) {
   const [showHistory, setShowHistory] = useState(false);
   
   const formatTime = (timestamp) => {
@@ -41,17 +41,6 @@ export default function AlarmPanel({ activeAlarms, alarmHistory, onClearAlarms }
   return (
     <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200 mb-6">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2 text-red-500">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
-          </svg>
-          Alarm Monitor 
-          {activeAlarms.length > 0 && (
-            <span className="ml-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-              {activeAlarms.length}
-            </span>
-          )}
-        </h3>
         <div className="flex gap-2">
           <button 
             onClick={() => setShowHistory(!showHistory)}
@@ -133,6 +122,14 @@ export default function AlarmPanel({ activeAlarms, alarmHistory, onClearAlarms }
       
       <div className="mt-4 text-xs text-gray-500">
         <p>Alarms are triggered when axis values exceed the thresholds set in Settings.</p>
+      </div>
+      
+      {/* Alarm status indication */}
+      <div className="mt-2 flex items-center">
+        <div className={`inline-block w-3 h-3 rounded-full mr-2 ${alarmsEnabled ? 'bg-green-500' : 'bg-red-500'}`}></div>
+        <span className="text-xs text-gray-600">
+          {alarmsEnabled ? 'Alarms are enabled' : 'Alarms are disabled - no new alerts will be triggered'}
+        </span>
       </div>
     </div>
   );

@@ -363,7 +363,7 @@ export default function CoppeliaSimMonitor() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {/* X-Axis Chart */}
             <div className="card p-4">
-              <h2 className="text-lg font-semibold mb-2">X-Axis Variations</h2>
+              <h2 className="text-lg font-semibold mb-2 text-center">X-Axis Variations</h2>
               <AxisChart 
                 data={accelerometerData} 
                 axis="x" 
@@ -375,7 +375,7 @@ export default function CoppeliaSimMonitor() {
             
             {/* Y-Axis Chart */}
             <div className="card p-4">
-              <h2 className="text-lg font-semibold mb-2">Y-Axis Variations</h2>
+              <h2 className="text-lg font-semibold mb-2 text-center">Y-Axis Variations</h2>
               <AxisChart 
                 data={accelerometerData} 
                 axis="y" 
@@ -387,7 +387,7 @@ export default function CoppeliaSimMonitor() {
             
             {/* Z-Axis Chart */}
             <div className="card p-4">
-              <h2 className="text-lg font-semibold mb-2">Z-Axis Variations</h2>
+              <h2 className="text-lg font-semibold mb-2 text-center">Z-Axis Variations</h2>
               <AxisChart 
                 data={accelerometerData} 
                 axis="z" 
