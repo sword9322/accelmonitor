@@ -85,7 +85,7 @@ export default function Dashboard() {
             setError(null);
             
             // Check for alarms
-            const newAlarms = alarmService.checkThresholds(accelerometerData);
+            const newAlarms = alarmService.checkThresholds(data);
             if (newAlarms.length > 0) {
               setActiveAlarms(prev => [...newAlarms, ...prev]);
               setAlarmHistory(prev => [...newAlarms, ...prev]);
