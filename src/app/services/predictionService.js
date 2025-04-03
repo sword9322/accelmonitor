@@ -6,6 +6,35 @@
 
 const predictionService = {
   /**
+   * Generate predictions based on selected method
+   * 
+   * @param {Array} data - Accelerometer data
+   * @param {string} method - Prediction method ('linear' or 'exponential')
+   * @param {number} pointsAhead - Number of points to predict ahead
+   * @returns {Array} - Predicted values
+   */
+  generatePredictions: (data, method = 'linear', pointsAhead = 5) => {
+    if (!data || data.length < 2) {
+      console.warn('Not enough data for prediction');
+      return [];
+    }
+    
+    let predictions = [];
+    
+    // Call appropriate prediction method based on selected method
+    if (method === 'linear') {
+      predictions = predictionService.predictLinear(data, pointsAhead);
+    } else if (method === 'exponential') {
+      predictions = predictionService.predictExponentialSmoothing(data, pointsAhead);
+    } else {
+      console.error(`Unknown prediction method: ${method}`);
+      return [];
+    }
+    
+    return predictions;
+  },
+  
+  /**
    * Predict future values using linear regression
    * 
    * @param {Array} data - Historical accelerometer data
