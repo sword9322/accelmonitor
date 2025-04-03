@@ -239,7 +239,11 @@ export default function Dashboard() {
   // Calculate basic statistics from the data
   const calculateStats = () => {
     if (!accelerometerData || accelerometerData.length === 0) {
-      return { x: {}, y: {}, z: {} };
+      return { 
+        x: { min: null, max: null, avg: null, stdDev: null }, 
+        y: { min: null, max: null, avg: null, stdDev: null }, 
+        z: { min: null, max: null, avg: null, stdDev: null } 
+      };
     }
 
     const stats = accelerometerService.calculateStatistics(accelerometerData);
@@ -376,15 +380,15 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-gray-600">Min</p>
-                <p className="text-xl">{typeof stats.x.min === 'string' ? stats.x.min : typeof stats.x.min === 'number' ? stats.x.min.toFixed(4) : 'N/A'}</p>
+                <p className="text-xl">{stats.x?.min !== null && stats.x?.min !== undefined ? stats.x.min : 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-600">Max</p>
-                <p className="text-xl">{typeof stats.x.max === 'string' ? stats.x.max : typeof stats.x.max === 'number' ? stats.x.max.toFixed(4) : 'N/A'}</p>
+                <p className="text-xl">{stats.x?.max !== null && stats.x?.max !== undefined ? stats.x.max : 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-600">Avg</p>
-                <p className="text-xl">{typeof stats.x.avg === 'string' ? stats.x.avg : typeof stats.x.avg === 'number' ? stats.x.avg.toFixed(4) : 'N/A'}</p>
+                <p className="text-xl">{stats.x?.avg !== null && stats.x?.avg !== undefined ? stats.x.avg : 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-600">Current</p>
@@ -398,15 +402,15 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-gray-600">Min</p>
-                <p className="text-xl">{typeof stats.y.min === 'string' ? stats.y.min : typeof stats.y.min === 'number' ? stats.y.min.toFixed(4) : 'N/A'}</p>
+                <p className="text-xl">{stats.y?.min !== null && stats.y?.min !== undefined ? stats.y.min : 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-600">Max</p>
-                <p className="text-xl">{typeof stats.y.max === 'string' ? stats.y.max : typeof stats.y.max === 'number' ? stats.y.max.toFixed(4) : 'N/A'}</p>
+                <p className="text-xl">{stats.y?.max !== null && stats.y?.max !== undefined ? stats.y.max : 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-600">Avg</p>
-                <p className="text-xl">{typeof stats.y.avg === 'string' ? stats.y.avg : typeof stats.y.avg === 'number' ? stats.y.avg.toFixed(4) : 'N/A'}</p>
+                <p className="text-xl">{stats.y?.avg !== null && stats.y?.avg !== undefined ? stats.y.avg : 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-600">Current</p>
@@ -420,15 +424,15 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-gray-600">Min</p>
-                <p className="text-xl">{typeof stats.z.min === 'string' ? stats.z.min : typeof stats.z.min === 'number' ? stats.z.min.toFixed(4) : 'N/A'}</p>
+                <p className="text-xl">{stats.z?.min !== null && stats.z?.min !== undefined ? stats.z.min : 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-600">Max</p>
-                <p className="text-xl">{typeof stats.z.max === 'string' ? stats.z.max : typeof stats.z.max === 'number' ? stats.z.max.toFixed(4) : 'N/A'}</p>
+                <p className="text-xl">{stats.z?.max !== null && stats.z?.max !== undefined ? stats.z.max : 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-600">Avg</p>
-                <p className="text-xl">{typeof stats.z.avg === 'string' ? stats.z.avg : typeof stats.z.avg === 'number' ? stats.z.avg.toFixed(4) : 'N/A'}</p>
+                <p className="text-xl">{stats.z?.avg !== null && stats.z?.avg !== undefined ? stats.z.avg : 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-600">Current</p>
