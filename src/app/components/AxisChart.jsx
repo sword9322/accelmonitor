@@ -40,7 +40,7 @@ export default function AxisChart({
   });
 
   useEffect(() => {
-    if (!data || data.length === 0 || !axis) {
+    if (!data || !Array.isArray(data) || data.length === 0 || !axis) {
       // Set empty chart data
       setChartData({
         labels: [],
@@ -51,43 +51,137 @@ export default function AxisChart({
 
     // Filter data based on timeRange
     const now = new Date();
-    let filteredData = [...data];
+    let filteredData = [...data].filter(item => 
+      item && 
+      typeof item === 'object' && 
+      item !== null && 
+      typeof item[axis] === 'number' && 
+      item.timestamp
+    );
     
+    if (filteredData.length === 0) {
+      // No valid data found
+      setChartData({
+        labels: [],
+        datasets: []
+      });
+      return;
+    }
+    
+    // Apply time range filtering
     if (timeRange === '5m') {
       const fiveMinutesAgo = subMinutes(now, 5);
-      filteredData = data.filter(reading => new Date(reading.timestamp) >= fiveMinutesAgo);
+      filteredData = filteredData.filter(reading => {
+        try {
+          const timestamp = reading.timestamp instanceof Date 
+            ? reading.timestamp 
+            : typeof reading.timestamp === 'number'
+              ? new Date(reading.timestamp * 1000)
+              : new Date(reading.timestamp);
+          return timestamp >= fiveMinutesAgo;
+        } catch (e) {
+          return false;
+        }
+      });
     } else if (timeRange === '15m') {
       const fifteenMinutesAgo = subMinutes(now, 15);
-      filteredData = data.filter(reading => new Date(reading.timestamp) >= fifteenMinutesAgo);
+      filteredData = filteredData.filter(reading => {
+        try {
+          const timestamp = reading.timestamp instanceof Date 
+            ? reading.timestamp 
+            : typeof reading.timestamp === 'number'
+              ? new Date(reading.timestamp * 1000)
+              : new Date(reading.timestamp);
+          return timestamp >= fifteenMinutesAgo;
+        } catch (e) {
+          return false;
+        }
+      });
     } else if (timeRange === '1h') {
       const oneHourAgo = subHours(now, 1);
-      filteredData = data.filter(reading => new Date(reading.timestamp) >= oneHourAgo);
+      filteredData = filteredData.filter(reading => {
+        try {
+          const timestamp = reading.timestamp instanceof Date 
+            ? reading.timestamp 
+            : typeof reading.timestamp === 'number'
+              ? new Date(reading.timestamp * 1000)
+              : new Date(reading.timestamp);
+          return timestamp >= oneHourAgo;
+        } catch (e) {
+          return false;
+        }
+      });
     } else if (timeRange === '24h') {
       const oneDayAgo = subHours(now, 24);
-      filteredData = data.filter(reading => new Date(reading.timestamp) >= oneDayAgo);
+      filteredData = filteredData.filter(reading => {
+        try {
+          const timestamp = reading.timestamp instanceof Date 
+            ? reading.timestamp 
+            : typeof reading.timestamp === 'number'
+              ? new Date(reading.timestamp * 1000)
+              : new Date(reading.timestamp);
+          return timestamp >= oneDayAgo;
+        } catch (e) {
+          return false;
+        }
+      });
     }
 
     // Ensure we always have some data to display even if the time filter removes everything
     if (filteredData.length === 0 && data.length > 0) {
-      filteredData = data.slice(0, Math.min(20, data.length));
+      filteredData = data
+        .filter(item => 
+          item && 
+          typeof item === 'object' && 
+          item !== null && 
+          typeof item[axis] === 'number' && 
+          item.timestamp
+        )
+        .slice(0, Math.min(20, data.length));
     }
 
     // Sort the data by timestamp (oldest first)
     filteredData.sort((a, b) => {
-      const aTime = a.timestamp instanceof Date ? a.timestamp : new Date(a.timestamp);
-      const bTime = b.timestamp instanceof Date ? b.timestamp : new Date(b.timestamp);
-      return aTime - bTime;
+      try {
+        const aTime = a.timestamp instanceof Date 
+          ? a.timestamp 
+          : typeof a.timestamp === 'number'
+            ? new Date(a.timestamp * 1000)
+            : new Date(a.timestamp);
+        const bTime = b.timestamp instanceof Date 
+          ? b.timestamp 
+          : typeof b.timestamp === 'number'
+            ? new Date(b.timestamp * 1000)
+            : new Date(b.timestamp);
+        return aTime - bTime;
+      } catch (e) {
+        return 0;
+      }
     });
 
     // Format the time labels
     const labels = filteredData.map(reading => {
-      const time = reading.timestamp instanceof Date ? reading.timestamp : new Date(reading.timestamp);
-      return format(time, 'HH:mm:ss');
+      try {
+        const time = reading.timestamp instanceof Date 
+          ? reading.timestamp 
+          : typeof reading.timestamp === 'number'
+            ? new Date(reading.timestamp * 1000)
+            : new Date(reading.timestamp);
+        return format(time, 'HH:mm:ss');
+      } catch (e) {
+        return 'Invalid time';
+      }
     });
 
     // Extract axis values and calculate average
-    const axisValues = filteredData.map(reading => reading[axis]);
-    const average = axisValues.reduce((sum, val) => sum + val, 0) / axisValues.length;
+    const axisValues = filteredData.map(reading => {
+      const value = reading[axis];
+      return typeof value === 'number' ? value : 0;
+    });
+    
+    // Calculate average safely
+    const sum = axisValues.reduce((acc, val) => acc + val, 0);
+    const average = axisValues.length > 0 ? sum / axisValues.length : 0;
 
     // Create the chart data configuration
     setChartData({
@@ -96,13 +190,13 @@ export default function AxisChart({
         {
           label: `${axis.toUpperCase()}-Axis`,
           data: axisValues,
-          borderColor: color,
+          borderColor: color || '#000000',
           backgroundColor: 'transparent',
           borderWidth: 2,
-          tension: 0.1, // Less smoothing to show spikes more clearly
-          pointRadius: 2, // Larger points
+          tension: 0.1,
+          pointRadius: 2,
           pointHoverRadius: 5,
-          pointBackgroundColor: color,
+          pointBackgroundColor: color || '#000000',
           pointBorderColor: 'white',
           pointBorderWidth: 1,
           fill: false,
@@ -129,42 +223,103 @@ export default function AxisChart({
 
     // Filter data based on timeRange first
     const now = new Date();
-    let filteredData = [...data];
+    let filteredData = [...data].filter(item => 
+      item && typeof item[axis] === 'number' && item.timestamp
+    );
     
+    if (filteredData.length === 0) {
+      return getDefaultRange();
+    }
+    
+    // Apply time range filtering
     if (timeRange === '5m') {
       const fiveMinutesAgo = subMinutes(now, 5);
-      filteredData = data.filter(reading => new Date(reading.timestamp) >= fiveMinutesAgo);
+      filteredData = filteredData.filter(reading => {
+        try {
+          const timestamp = reading.timestamp instanceof Date 
+            ? reading.timestamp 
+            : new Date(reading.timestamp);
+          return timestamp >= fiveMinutesAgo;
+        } catch (e) {
+          return false;
+        }
+      });
     } else if (timeRange === '15m') {
       const fifteenMinutesAgo = subMinutes(now, 15);
-      filteredData = data.filter(reading => new Date(reading.timestamp) >= fifteenMinutesAgo);
+      filteredData = filteredData.filter(reading => {
+        try {
+          const timestamp = reading.timestamp instanceof Date 
+            ? reading.timestamp 
+            : new Date(reading.timestamp);
+          return timestamp >= fifteenMinutesAgo;
+        } catch (e) {
+          return false;
+        }
+      });
     } else if (timeRange === '1h') {
       const oneHourAgo = subHours(now, 1);
-      filteredData = data.filter(reading => new Date(reading.timestamp) >= oneHourAgo);
+      filteredData = filteredData.filter(reading => {
+        try {
+          const timestamp = reading.timestamp instanceof Date 
+            ? reading.timestamp 
+            : new Date(reading.timestamp);
+          return timestamp >= oneHourAgo;
+        } catch (e) {
+          return false;
+        }
+      });
     } else if (timeRange === '24h') {
       const oneDayAgo = subHours(now, 24);
-      filteredData = data.filter(reading => new Date(reading.timestamp) >= oneDayAgo);
+      filteredData = filteredData.filter(reading => {
+        try {
+          const timestamp = reading.timestamp instanceof Date 
+            ? reading.timestamp 
+            : new Date(reading.timestamp);
+          return timestamp >= oneDayAgo;
+        } catch (e) {
+          return false;
+        }
+      });
     }
 
     // Ensure we have data to analyze
     if (filteredData.length === 0) {
-      filteredData = data.slice(0, Math.min(20, data.length));
+      filteredData = data
+        .filter(item => item && typeof item[axis] === 'number')
+        .slice(0, Math.min(20, data.length));
+      
+      if (filteredData.length === 0) {
+        return getDefaultRange();
+      }
     }
 
     // Extract axis values
-    const axisValues = filteredData.map(reading => reading[axis]);
+    const axisValues = filteredData.map(reading => {
+      const value = reading[axis];
+      return typeof value === 'number' ? value : 0;
+    });
+    
+    if (axisValues.length === 0) {
+      return getDefaultRange();
+    }
     
     // Calculate min and max values
     let min = Math.min(...axisValues);
     let max = Math.max(...axisValues);
     
+    // Check for valid numbers
+    if (!isFinite(min) || !isFinite(max)) {
+      return getDefaultRange();
+    }
+    
     // Calculate the range of values
     const valueRange = max - min;
     
     // If we have a very small range, expand it a bit to avoid flat lines
-    if (valueRange < 0.2) {
+    if (!isFinite(valueRange) || valueRange < 0.2) {
       const average = (max + min) / 2;
-      min = average - 0.5;
-      max = average + 0.5;
+      min = isFinite(average) ? average - 0.5 : -0.5;
+      max = isFinite(average) ? average + 0.5 : 0.5;
     } else {
       // Add padding to ensure spikes are visible (20% padding)
       const padding = valueRange * 0.2;

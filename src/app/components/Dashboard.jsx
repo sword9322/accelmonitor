@@ -376,19 +376,19 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-gray-600">Min</p>
-                <p className="text-xl">{stats.x.min || 'N/A'}</p>
+                <p className="text-xl">{typeof stats.x.min === 'string' ? stats.x.min : typeof stats.x.min === 'number' ? stats.x.min.toFixed(4) : 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-600">Max</p>
-                <p className="text-xl">{stats.x.max || 'N/A'}</p>
+                <p className="text-xl">{typeof stats.x.max === 'string' ? stats.x.max : typeof stats.x.max === 'number' ? stats.x.max.toFixed(4) : 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-600">Avg</p>
-                <p className="text-xl">{stats.x.avg || 'N/A'}</p>
+                <p className="text-xl">{typeof stats.x.avg === 'string' ? stats.x.avg : typeof stats.x.avg === 'number' ? stats.x.avg.toFixed(4) : 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-600">Current</p>
-                <p className="text-xl">{accelerometerData[0]?.x.toFixed(3) || 'N/A'}</p>
+                <p className="text-xl">{accelerometerData[0]?.x !== undefined ? accelerometerData[0].x.toFixed(3) : 'N/A'}</p>
               </div>
             </div>
           </div>
@@ -398,19 +398,19 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-gray-600">Min</p>
-                <p className="text-xl">{stats.y.min || 'N/A'}</p>
+                <p className="text-xl">{typeof stats.y.min === 'string' ? stats.y.min : typeof stats.y.min === 'number' ? stats.y.min.toFixed(4) : 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-600">Max</p>
-                <p className="text-xl">{stats.y.max || 'N/A'}</p>
+                <p className="text-xl">{typeof stats.y.max === 'string' ? stats.y.max : typeof stats.y.max === 'number' ? stats.y.max.toFixed(4) : 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-600">Avg</p>
-                <p className="text-xl">{stats.y.avg || 'N/A'}</p>
+                <p className="text-xl">{typeof stats.y.avg === 'string' ? stats.y.avg : typeof stats.y.avg === 'number' ? stats.y.avg.toFixed(4) : 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-600">Current</p>
-                <p className="text-xl">{accelerometerData[0]?.y.toFixed(3) || 'N/A'}</p>
+                <p className="text-xl">{accelerometerData[0]?.y !== undefined ? accelerometerData[0].y.toFixed(3) : 'N/A'}</p>
               </div>
             </div>
           </div>
@@ -420,19 +420,19 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-gray-600">Min</p>
-                <p className="text-xl">{stats.z.min || 'N/A'}</p>
+                <p className="text-xl">{typeof stats.z.min === 'string' ? stats.z.min : typeof stats.z.min === 'number' ? stats.z.min.toFixed(4) : 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-600">Max</p>
-                <p className="text-xl">{stats.z.max || 'N/A'}</p>
+                <p className="text-xl">{typeof stats.z.max === 'string' ? stats.z.max : typeof stats.z.max === 'number' ? stats.z.max.toFixed(4) : 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-600">Avg</p>
-                <p className="text-xl">{stats.z.avg || 'N/A'}</p>
+                <p className="text-xl">{typeof stats.z.avg === 'string' ? stats.z.avg : typeof stats.z.avg === 'number' ? stats.z.avg.toFixed(4) : 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-600">Current</p>
-                <p className="text-xl">{accelerometerData[0]?.z.toFixed(3) || 'N/A'}</p>
+                <p className="text-xl">{accelerometerData[0]?.z !== undefined ? accelerometerData[0].z.toFixed(3) : 'N/A'}</p>
               </div>
             </div>
           </div>
@@ -509,10 +509,18 @@ export default function Dashboard() {
             <tbody>
               {chartData.slice(0, 10).map((reading, index) => (
                 <tr key={reading.id || index} className={reading.isPrediction ? 'bg-blue-50 dark:bg-blue-900' : 'border-b border-gray-200 dark:border-gray-700'}>
-                  <td className="px-4 py-2">{reading.timestamp?.toLocaleTimeString() || 'Unknown'}</td>
-                  <td className="px-4 py-2">{reading.x.toFixed(4)}</td>
-                  <td className="px-4 py-2">{reading.y.toFixed(4)}</td>
-                  <td className="px-4 py-2">{reading.z.toFixed(4)}</td>
+                  <td className="px-4 py-2">
+                    {reading.timestamp ? 
+                      (reading.timestamp instanceof Date 
+                        ? reading.timestamp.toLocaleTimeString() 
+                        : typeof reading.timestamp === 'number'
+                          ? new Date(reading.timestamp * 1000).toLocaleTimeString()
+                          : 'Unknown') 
+                      : 'Unknown'}
+                  </td>
+                  <td className="px-4 py-2">{typeof reading.x === 'number' ? reading.x.toFixed(4) : 'N/A'}</td>
+                  <td className="px-4 py-2">{typeof reading.y === 'number' ? reading.y.toFixed(4) : 'N/A'}</td>
+                  <td className="px-4 py-2">{typeof reading.z === 'number' ? reading.z.toFixed(4) : 'N/A'}</td>
                   {predictionEnabled && (
                     <td className="px-4 py-2">
                       {reading.isPrediction ? (

@@ -424,13 +424,18 @@ const accelerometerService = {
    */
   calculateStatistics: (data) => {
     if (!data || data.length === 0) {
-      return null;
+      return {
+        x: { min: 'N/A', max: 'N/A', avg: 'N/A', stdDev: 'N/A' },
+        y: { min: 'N/A', max: 'N/A', avg: 'N/A', stdDev: 'N/A' },
+        z: { min: 'N/A', max: 'N/A', avg: 'N/A', stdDev: 'N/A' },
+        sampleCount: 0
+      };
     }
 
     // Extract values for each axis, defaulting to 0 if not present
-    const xValues = data.map(item => item.x || 0);
-    const yValues = data.map(item => item.y || 0);
-    const zValues = data.map(item => item.z || 0);
+    const xValues = data.map(item => typeof item.x === 'number' ? item.x : 0);
+    const yValues = data.map(item => typeof item.y === 'number' ? item.y : 0);
+    const zValues = data.map(item => typeof item.z === 'number' ? item.z : 0);
 
     // Calculate statistics for a set of values
     const calculateAxisStats = (values) => {
@@ -445,10 +450,10 @@ const accelerometerService = {
       const stdDev = Math.sqrt(avgSquaredDiff);
       
       return {
-        min: min.toFixed(4),
-        max: max.toFixed(4),
-        avg: avg.toFixed(4),
-        stdDev: stdDev.toFixed(4)
+        min: isFinite(min) ? min.toFixed(4) : 'N/A',
+        max: isFinite(max) ? max.toFixed(4) : 'N/A',
+        avg: isFinite(avg) ? avg.toFixed(4) : 'N/A',
+        stdDev: isFinite(stdDev) ? stdDev.toFixed(4) : 'N/A'
       };
     };
 
