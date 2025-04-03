@@ -355,15 +355,15 @@ export default function Dashboard() {
                 <h4 className="font-medium mb-2 text-white">X Axis</h4>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <span className="text-sm text-grey">Min</span>
+                    <span className="text-sm text-gray-500">Min</span>
                     <p className="font-mono text-white">{stats.x.min.toFixed(4)}</p>
                   </div>
                   <div>
-                    <span className="text-sm text-grey">Max</span>
+                    <span className="text-sm text-gray-500">Max</span>
                     <p className="font-mono text-white">{stats.x.max.toFixed(4)}</p>
                   </div>
                   <div>
-                    <span className="text-sm text-grey">Avg</span>
+                    <span className="text-sm text-gray-500">Avg</span>
                     <p className="font-mono text-white">{stats.x.avg.toFixed(4)}</p>
                   </div>
                 </div>
@@ -372,32 +372,32 @@ export default function Dashboard() {
                 <h4 className="font-medium mb-2 text-white">Y Axis</h4>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <span className="text-sm text-grey">Min</span>
+                    <span className="text-sm text-gray-500">Min</span>
                     <p className="font-mono text-white">{stats.y.min.toFixed(4)}</p>
                   </div>
                   <div>
-                    <span className="text-sm text-grey">Max</span>
+                    <span className="text-sm text-gray-500">Max</span>
                     <p className="font-mono text-white">{stats.y.max.toFixed(4)}</p>
                   </div>
                   <div>
-                    <span className="text-sm text-grey">Avg</span>
-                    <p className="font-mono">{stats.y.avg.toFixed(4)}</p>
+                    <span className="text-sm text-gray-500">Avg</span>
+                    <p className="font-mono text-white">{stats.y.avg.toFixed(4)}</p>
                   </div>
                 </div>
               </div>
               <div>
-                <h4 className="font-medium mb-2">Z Axis</h4>
+                <h4 className="font-medium mb-2 text-white">Z Axis</h4>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <span className="text-sm text-grey">Min</span>
+                    <span className="text-sm text-gray-500">Min</span>
                     <p className="font-mono text-white">{stats.z.min.toFixed(4)}</p>
                   </div>
                   <div>
-                    <span className="text-sm text-grey">Max</span>
+                    <span className="text-sm text-gray-500">Max</span>
                     <p className="font-mono text-white">{stats.z.max.toFixed(4)}</p>
                   </div>
                   <div>
-                    <span className="text-sm text-grey">Avg</span>
+                    <span className="text-sm text-gray-500">Avg</span>
                     <p className="font-mono text-white">{stats.z.avg.toFixed(4)}</p>
                   </div>
                 </div>
