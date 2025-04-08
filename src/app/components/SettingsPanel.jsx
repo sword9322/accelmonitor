@@ -23,41 +23,44 @@ export default function SettingsPanel({
   isClearing,
   clearSuccess
 }) {
+  // ===== START: Hooks moved to top =====
   const { user } = useAuth();
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
-  
-  // Track selected values separately to avoid immediate changes
   const [selectedInterval, setSelectedInterval] = useState(refreshInterval);
   const [selectedChartType, setSelectedChartType] = useState(chartType);
   const [selectedTimeRange, setSelectedTimeRange] = useState(timeRange);
   const [selectedReportTimeInterval, setSelectedReportTimeInterval] = useState('30m');
-  const [selectedPredictionEnabled, setSelectedPredictionEnabled] = useState(predictionEnabled || false);
-  const [selectedPredictionMethod, setSelectedPredictionMethod] = useState(predictionMethod || 'linear');
-  
-  // Track alarm thresholds
-  const [xMinThreshold, setXMinThreshold] = useState(alarmThresholds?.x?.min || -10);
-  const [xMaxThreshold, setXMaxThreshold] = useState(alarmThresholds?.x?.max || 10);
-  const [yMinThreshold, setYMinThreshold] = useState(alarmThresholds?.y?.min || -10);
-  const [yMaxThreshold, setYMaxThreshold] = useState(alarmThresholds?.y?.max || 10);
-  const [zMinThreshold, setZMinThreshold] = useState(alarmThresholds?.z?.min || -10);
-  const [zMaxThreshold, setZMaxThreshold] = useState(alarmThresholds?.z?.max || 10);
+  const [selectedPredictionEnabled, setSelectedPredictionEnabled] = useState(predictionEnabled ?? false);
+  const [selectedPredictionMethod, setSelectedPredictionMethod] = useState(predictionMethod ?? 'linear');
+  const [xMinThreshold, setXMinThreshold] = useState(alarmThresholds?.x?.min ?? -10);
+  const [xMaxThreshold, setXMaxThreshold] = useState(alarmThresholds?.x?.max ?? 10);
+  const [yMinThreshold, setYMinThreshold] = useState(alarmThresholds?.y?.min ?? -10);
+  const [yMaxThreshold, setYMaxThreshold] = useState(alarmThresholds?.y?.max ?? 10);
+  const [zMinThreshold, setZMinThreshold] = useState(alarmThresholds?.z?.min ?? -10);
+  const [zMaxThreshold, setZMaxThreshold] = useState(alarmThresholds?.z?.max ?? 10);
 
-  // Update selectedInterval when refreshInterval prop changes
+  // Effect to update selectedInterval when prop changes
   useEffect(() => {
     setSelectedInterval(refreshInterval);
   }, [refreshInterval]);
+  // ===== END: Hooks moved to top =====
 
-  // Redirect non-admin users
+  // Redirect non-admin users (runs AFTER hooks)
   useEffect(() => {
-    if (user && !user.isAdmin) { // Ensure user is loaded before checking isAdmin
+    // Consider adding check for auth loading state from useAuth if available
+    // e.g., if (authLoading) return;
+    if (user !== undefined && user !== null && !user.isAdmin) { 
       router.push('/access-denied');
     }
-  }, [user, router]);
+  }, [user, router]); // Add authLoading dependency if used
 
-  // If user is loaded and not admin, don't render the panel
-  if (user && !user.isAdmin) {
-    return null;
+  // Conditional rendering (runs AFTER hooks)
+  // Consider adding check for auth loading state
+  // e.g., if (authLoading) return <LoadingSpinner />;
+  if (user === undefined || user === null || !user.isAdmin) {
+    // Return null only if user is loaded and not an admin, or not loaded
+    return null; 
   }
 
   // Update frequency options

@@ -26,9 +26,9 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [getIdToken]);
+  }, [getIdToken, setLoading, setError, setUsers]);
 
-  const deleteUser = async (userId) => {
+  const deleteUser = useCallback(async (userId) => {
     if (!window.confirm('Are you sure you want to delete this user?')) {
       return;
     }
@@ -50,9 +50,9 @@ export default function AdminUsersPage() {
       console.error('Error deleting user:', err);
       setError('Failed to delete user. Please try again later.');
     }
-  };
+  }, [getIdToken, fetchUsers, setError, setSuccessMessage]);
 
-  const changeRole = async (userId, newRole) => {
+  const changeRole = useCallback(async (userId, newRole) => {
     try {
       setError(null);
       const token = await getIdToken();
@@ -70,7 +70,7 @@ export default function AdminUsersPage() {
       console.error('Error changing role:', err);
       setError('Failed to update user role. Please try again later.');
     }
-  };
+  }, [getIdToken, fetchUsers, setError, setSuccessMessage]);
 
   useEffect(() => {
     if (user) {
