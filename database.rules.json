@@ -1,18 +1,14 @@
 {
   "rules": {
     "users": {
-      "simulator_user": {
-        ".read": "auth != null",
-        "accelerometer_readings": {
-          ".indexOn": ["timestamp"],
-          ".read": "auth != null"
-        }
-      },
+      ".read": "auth != null",
+      ".write": "auth != null",
       "$uid": {
-        ".read": "$uid === auth.uid",
-        ".write": "$uid === auth.uid",
-        "accelerometer_readings": {
-          ".indexOn": ["timestamp"]
+        ".read": "$uid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin'",
+        ".write": "$uid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin'",
+        "role": {
+          ".read": "$uid === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin'",
+          ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'"
         }
       }
     },
@@ -23,7 +19,7 @@
     },
     "weather": {
       ".read": "auth != null",
-      ".write": "auth != null"
+      ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'"
     }
   }
 } 

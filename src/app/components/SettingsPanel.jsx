@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function SettingsPanel({ 
   refreshInterval, 
@@ -21,8 +23,22 @@ export default function SettingsPanel({
   isClearing,
   clearSuccess
 }) {
+  const { user } = useAuth();
+  const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
   
+  // Redirect non-admin users
+  useEffect(() => {
+    if (!user?.isAdmin) {
+      router.push('/access-denied');
+    }
+  }, [user, router]);
+
+  // If not admin, don't render the panel
+  if (!user?.isAdmin) {
+    return null;
+  }
+
   // Update frequency options
   const updateFrequencyOptions = [
     { label: 'Live (100ms)', value: 0.1 },

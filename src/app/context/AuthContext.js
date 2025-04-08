@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }) => {
     if (!user) return;
     try {
       const token = await user.getIdToken();
-      const response = await fetch('/api/user/role', {
+      const response = await fetch('/user/role', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
