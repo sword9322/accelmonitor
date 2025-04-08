@@ -1,13 +1,12 @@
 import { getDatabase, ref, push, query, orderByChild, limitToLast, get, set, onValue } from 'firebase/database';
 import { app } from '../firebase/config';
+import axios from 'axios';
 
 // Initialize Firebase Realtime Database
 const database = getDatabase(app);
 
 // Constants
-const SIMULATOR_USER_ID = "simulator_user";
-const OPENWEATHER_API_KEY = "e206c549180b9c642a66e73683742270";
-const LISBON_COORDS = { lat: 38.7223, lon: -9.1393 }; // Lisbon coordinates
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 const weatherService = {
   _pollingInterval: null,
@@ -15,6 +14,7 @@ const weatherService = {
   _subscribers: [],
   _lastData: null,
   _realtimeListeners: {},
+  _currentCity: "Lisbon", // Default city
 
   /**
    * Start polling for weather data
@@ -34,13 +34,9 @@ const weatherService = {
     console.log(`Starting weather polling with ${delay}ms interval`);
     weatherService._pollingDelay = delay;
     
-    // Initial fetch
-    weatherService._fetchAndNotify();
-    
     // Set up interval for continuous fetching
     weatherService._pollingInterval = setInterval(() => {
-      console.log(`Polling weather data (interval: ${weatherService._pollingDelay}ms) at ${new Date().toLocaleTimeString()}`);
-      weatherService._fetchAndNotify();
+      console.log(`Checking for weather updates (interval: ${weatherService._pollingDelay}ms) at ${new Date().toLocaleTimeString()}`);
     }, delay);
     
     return () => weatherService.stopPolling();
@@ -64,59 +60,13 @@ const weatherService = {
    */
   subscribe: (callback) => {
     weatherService._subscribers.push(callback);
+    // Call with current data if available
+    if (weatherService._lastData) {
+      callback(weatherService._lastData);
+    }
     return () => {
       weatherService._subscribers = weatherService._subscribers.filter(cb => cb !== callback);
     };
-  },
-
-  /**
-   * Fetch weather data from OpenWeather API and notify subscribers
-   */
-  _fetchAndNotify: async () => {
-    try {
-      const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?lat=${LISBON_COORDS.lat}&lon=${LISBON_COORDS.lon}&appid=${OPENWEATHER_API_KEY}&units=metric`
-      );
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      // Transform the data to our format
-      const weatherData = {
-        temperature: data.main.temp,
-        feelsLike: data.main.feels_like,
-        humidity: data.main.humidity,
-        description: data.weather[0].description,
-        icon: data.weather[0].icon,
-        timestamp: Date.now()
-      };
-      
-      // Save to Firebase
-      await weatherService._saveToFirebase(weatherData);
-      
-      // Update last data and notify subscribers
-      weatherService._lastData = weatherData;
-      weatherService._notifySubscribers(weatherData);
-      
-    } catch (error) {
-      console.error('Error fetching weather data:', error);
-    }
-  },
-
-  /**
-   * Save weather data to Firebase
-   * @param {Object} data - Weather data to save
-   */
-  _saveToFirebase: async (data) => {
-    try {
-      const weatherRef = ref(database, `users/${SIMULATOR_USER_ID}/weather_readings`);
-      await push(weatherRef, data);
-    } catch (error) {
-      console.error('Error saving weather data to Firebase:', error);
-    }
   },
 
   /**
@@ -139,18 +89,28 @@ const weatherService = {
   setupWeatherListener: () => {
     weatherService.removeRealtimeListeners();
     
-    const weatherRef = ref(database, `users/${SIMULATOR_USER_ID}/weather_readings`);
-    const weatherQuery = query(weatherRef, orderByChild('timestamp'), limitToLast(1));
+    const weatherRef = ref(database, 'weather');
     
     console.log('Setting up realtime listener for weather data');
     
-    const unsubscribe = onValue(weatherQuery, (snapshot) => {
+    const unsubscribe = onValue(weatherRef, (snapshot) => {
       try {
         if (snapshot.exists()) {
           const data = snapshot.val();
-          const lastReading = Object.values(data)[0];
-          weatherService._lastData = lastReading;
-          weatherService._notifySubscribers(lastReading);
+          
+          // Transform data to match our frontend format
+          const weatherData = {
+            temperature: data.temperature,
+            feelsLike: data.feels_like,
+            humidity: data.humidity,
+            description: data.conditions,
+            city: data.city,
+            timestamp: data.timestamp * 1000 // Convert to milliseconds for JavaScript
+          };
+          
+          weatherService._lastData = weatherData;
+          weatherService._currentCity = data.city;
+          weatherService._notifySubscribers(weatherData);
         }
       } catch (error) {
         console.error('Error processing weather data:', error);
@@ -161,11 +121,55 @@ const weatherService = {
   },
 
   /**
+   * Change the weather location
+   * @param {string} city - New city name
+   * @returns {Promise<Object>} - Response from the API
+   */
+  changeLocation: async (city) => {
+    try {
+      // Get the authentication token
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
+        throw new Error('Authentication token not found');
+      }
+      
+      // Make API request to change location
+      const response = await axios.post(
+        `${API_URL}/weather/config`,
+        { city },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      console.log(`Location changed to ${city}`, response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error changing weather location:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get the current city
+   * @returns {string} - Current city name
+   */
+  getCurrentCity: () => {
+    return weatherService._currentCity;
+  },
+
+  /**
    * Remove all realtime listeners
    */
   removeRealtimeListeners: () => {
     Object.values(weatherService._realtimeListeners).forEach(unsubscribe => {
-      unsubscribe();
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
     });
     weatherService._realtimeListeners = {};
   }

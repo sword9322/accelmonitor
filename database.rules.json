@@ -20,6 +20,10 @@
       ".read": "auth != null",
       ".write": "auth != null",
       ".indexOn": ["timestamp", "userId"]
+    },
+    "weather": {
+      ".read": "auth != null",
+      ".write": "auth != null"
     }
   }
 } 
