@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server';
 
+// Get the backend API URL from environment variables
+const BACKEND_API_URL = process.env.BACKEND_API_URL;
+
 export async function POST(request) {
+  if (!BACKEND_API_URL) {
+    console.error('BACKEND_API_URL environment variable is not set.');
+    return NextResponse.json({ error: 'Internal server configuration error' }, { status: 500 });
+  }
+
   try {
     // Get the token from the authorization header
     const authHeader = request.headers.get('authorization');
@@ -18,7 +26,7 @@ export async function POST(request) {
     const body = await request.json();
     
     // Call the backend API with the token
-    const response = await fetch('http://localhost:8000/admin/set-role', {
+    const response = await fetch(`${BACKEND_API_URL}/admin/set-role`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

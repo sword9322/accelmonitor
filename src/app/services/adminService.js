@@ -1,6 +1,9 @@
 /**
  * Service for managing administrative functions
  */
+// Remove API_BASE_URL if not needed directly by this service
+// const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL; 
+
 const adminService = {
   /**
    * Get all users (admin only)
@@ -9,6 +12,7 @@ const adminService = {
    */
   getAllUsers: async (token) => {
     try {
+      // Use the Next.js API proxy route
       const response = await fetch('/api/admin/users', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -34,6 +38,7 @@ const adminService = {
    */
   deleteUser: async (userId, token) => {
     try {
+      // Use the Next.js API proxy route
       const response = await fetch(`/api/admin/users/${userId}`, {
         method: 'DELETE',
         headers: {
@@ -61,6 +66,7 @@ const adminService = {
    */
   setUserRole: async (userId, role, token) => {
     try {
+      // Use the Next.js API proxy route
       const response = await fetch('/api/admin/set-role', {
         method: 'POST',
         headers: {
@@ -91,6 +97,7 @@ const adminService = {
    */
   checkAdminStatus: async (token) => {
     try {
+      // Use the Next.js API proxy route
       const response = await fetch('/api/user/role', {
         headers: {
           'Authorization': `Bearer ${token}`

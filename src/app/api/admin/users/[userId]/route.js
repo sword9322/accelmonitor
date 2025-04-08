@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server';
 
+// Get the backend API URL from environment variables
+const BACKEND_API_URL = process.env.BACKEND_API_URL;
+
 export async function DELETE(request, { params }) {
+  if (!BACKEND_API_URL) {
+    console.error('BACKEND_API_URL environment variable is not set.');
+    return NextResponse.json({ error: 'Internal server configuration error' }, { status: 500 });
+  }
+
   try {
     const { userId } = params;
     
@@ -17,7 +25,7 @@ export async function DELETE(request, { params }) {
     const token = authHeader.split(' ')[1];
     
     // Call the backend API with the token
-    const response = await fetch(`http://localhost:8000/admin/users/${userId}`, {
+    const response = await fetch(`${BACKEND_API_URL}/admin/users/${userId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`

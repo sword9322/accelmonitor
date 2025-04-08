@@ -11,6 +11,9 @@ import {
 } from 'firebase/auth';
 import { auth } from '../firebase/config';
 
+// Base URL for the API server
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+
 // Create authentication context
 const AuthContext = createContext();
 
@@ -32,9 +35,14 @@ export const AuthProvider = ({ children }) => {
   // Get user role from API
   const getUserRole = async (user) => {
     if (!user) return;
+    if (!API_BASE_URL) {
+      console.error("API Base URL (NEXT_PUBLIC_API_URL) is not defined.");
+      setIsAdmin(false);
+      return;
+    }
     try {
       const token = await user.getIdToken();
-      const response = await fetch('/user/role', {
+      const response = await fetch(`/api/user/role`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
