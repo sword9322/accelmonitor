@@ -10,6 +10,7 @@ import accelerometerService from '../services/accelerometerService';
 import alarmService from '../services/alarmService';
 import reportService from '../services/reportService';
 import predictionService from '../services/predictionService';
+import WeatherCard from './WeatherCard';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -371,6 +372,11 @@ export default function Dashboard() {
           clearSuccess={clearSuccess}
         />
       )}
+
+      {/* Weather Card */}
+      <div className="mb-8">
+        <WeatherCard />
+      </div>
 
       {/* 1. Combined Accelerometer Data */}
       <div className="card p-6 mb-8">
