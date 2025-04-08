@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 
 export default function Header() {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   
   const isActive = (path) => {
     return pathname === path ? 'text-blue-500 font-semibold' : 'text-gray-600 hover:text-blue-500';
@@ -41,6 +41,11 @@ export default function Header() {
             <Link href="/coppelia-monitor" className={`${isActive('/coppelia-monitor')} transition duration-150`}>
               Monitor
             </Link>
+            {isAdmin && (
+              <Link href="/admin/users" className={`${isActive('/admin/users')} transition duration-150`}>
+                User Management
+              </Link>
+            )}
             <button 
               onClick={handleLogout} 
               className="text-gray-600 hover:text-blue-500 transition duration-150"

@@ -27,6 +27,28 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Get user role from API
+  const getUserRole = async (user) => {
+    if (!user) return;
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch('/api/user/role', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setIsAdmin(data.role === 'admin');
+      }
+    } catch (error) {
+      console.error('Error getting user role:', error);
+      setIsAdmin(false);
+    }
+  };
 
   // Sign up function
   const signup = async (email, password, displayName) => {
@@ -35,6 +57,7 @@ export const AuthProvider = ({ children }) => {
       if (displayName) {
         await updateProfile(userCredential.user, { displayName });
       }
+      await getUserRole(userCredential.user);
       return userCredential.user;
     } catch (error) {
       console.error('Signup error:', error);
@@ -46,6 +69,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      await getUserRole(userCredential.user);
       return userCredential.user;
     } catch (error) {
       console.error('Login error:', error);
@@ -57,6 +81,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await signOut(auth);
+      setIsAdmin(false);
     } catch (error) {
       console.error('Logout error:', error);
       throw error;
@@ -75,8 +100,13 @@ export const AuthProvider = ({ children }) => {
 
   // Effect to set up auth state listener
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        await getUserRole(currentUser);
+      } else {
+        setIsAdmin(false);
+      }
       setLoading(false);
     });
 
@@ -88,11 +118,13 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     loading,
+    isAdmin,
     signup,
     login,
     logout,
     resetPassword,
-    register: signup
+    register: signup,
+    getIdToken: async () => user ? await user.getIdToken() : null
   };
 
   return (
