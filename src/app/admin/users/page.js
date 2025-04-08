@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Header from '../../components/Header';
 import RequireAdmin from '../../components/RequireAdmin';
@@ -13,7 +13,7 @@ export default function AdminUsersPage() {
   const [successMessage, setSuccessMessage] = useState('');
   const { user, getIdToken } = useAuth();
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -26,7 +26,7 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getIdToken]);
 
   const deleteUser = async (userId) => {
     if (!window.confirm('Are you sure you want to delete this user?')) {
@@ -76,7 +76,7 @@ export default function AdminUsersPage() {
     if (user) {
       fetchUsers();
     }
-  }, [user]);
+  }, [user, fetchUsers]);
 
   return (
     <RequireAdmin>

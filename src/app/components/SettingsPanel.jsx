@@ -27,15 +27,36 @@ export default function SettingsPanel({
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
   
+  // Track selected values separately to avoid immediate changes
+  const [selectedInterval, setSelectedInterval] = useState(refreshInterval);
+  const [selectedChartType, setSelectedChartType] = useState(chartType);
+  const [selectedTimeRange, setSelectedTimeRange] = useState(timeRange);
+  const [selectedReportTimeInterval, setSelectedReportTimeInterval] = useState('30m');
+  const [selectedPredictionEnabled, setSelectedPredictionEnabled] = useState(predictionEnabled || false);
+  const [selectedPredictionMethod, setSelectedPredictionMethod] = useState(predictionMethod || 'linear');
+  
+  // Track alarm thresholds
+  const [xMinThreshold, setXMinThreshold] = useState(alarmThresholds?.x?.min || -10);
+  const [xMaxThreshold, setXMaxThreshold] = useState(alarmThresholds?.x?.max || 10);
+  const [yMinThreshold, setYMinThreshold] = useState(alarmThresholds?.y?.min || -10);
+  const [yMaxThreshold, setYMaxThreshold] = useState(alarmThresholds?.y?.max || 10);
+  const [zMinThreshold, setZMinThreshold] = useState(alarmThresholds?.z?.min || -10);
+  const [zMaxThreshold, setZMaxThreshold] = useState(alarmThresholds?.z?.max || 10);
+
+  // Update selectedInterval when refreshInterval prop changes
+  useEffect(() => {
+    setSelectedInterval(refreshInterval);
+  }, [refreshInterval]);
+
   // Redirect non-admin users
   useEffect(() => {
-    if (!user?.isAdmin) {
+    if (user && !user.isAdmin) { // Ensure user is loaded before checking isAdmin
       router.push('/access-denied');
     }
   }, [user, router]);
 
-  // If not admin, don't render the panel
-  if (!user?.isAdmin) {
+  // If user is loaded and not admin, don't render the panel
+  if (user && !user.isAdmin) {
     return null;
   }
 
@@ -80,27 +101,6 @@ export default function SettingsPanel({
     { label: 'Linear Regression', value: 'linear' },
     { label: 'Exponential Smoothing', value: 'exponential' },
   ];
-
-  // Track selected values separately to avoid immediate changes
-  const [selectedInterval, setSelectedInterval] = useState(refreshInterval);
-  const [selectedChartType, setSelectedChartType] = useState(chartType);
-  const [selectedTimeRange, setSelectedTimeRange] = useState(timeRange);
-  const [selectedReportTimeInterval, setSelectedReportTimeInterval] = useState('30m');
-  const [selectedPredictionEnabled, setSelectedPredictionEnabled] = useState(predictionEnabled || false);
-  const [selectedPredictionMethod, setSelectedPredictionMethod] = useState(predictionMethod || 'linear');
-  
-  // Track alarm thresholds
-  const [xMinThreshold, setXMinThreshold] = useState(alarmThresholds?.x?.min || -10);
-  const [xMaxThreshold, setXMaxThreshold] = useState(alarmThresholds?.x?.max || 10);
-  const [yMinThreshold, setYMinThreshold] = useState(alarmThresholds?.y?.min || -10);
-  const [yMaxThreshold, setYMaxThreshold] = useState(alarmThresholds?.y?.max || 10);
-  const [zMinThreshold, setZMinThreshold] = useState(alarmThresholds?.z?.min || -10);
-  const [zMaxThreshold, setZMaxThreshold] = useState(alarmThresholds?.z?.max || 10);
-
-  // Update selectedInterval when refreshInterval prop changes
-  useEffect(() => {
-    setSelectedInterval(refreshInterval);
-  }, [refreshInterval]);
 
   // Handle update frequency change
   const handleUpdateFrequencyChange = (e) => {
