@@ -44,6 +44,7 @@ export default function Dashboard() {
   const [showAlarmPanel, setShowAlarmPanel] = useState(true);
   const [alarmsEnabled, setAlarmsEnabled] = useState(false);
   const [showStatistics, setShowStatistics] = useState(true);
+  const [showServerAlert, setShowServerAlert] = useState(false);
 
   // Calculate statistics from accelerometer data
   const stats = useMemo(() => {
@@ -138,6 +139,13 @@ export default function Dashboard() {
     };
   }, [refreshInterval, alarmThresholds, predictionEnabled, predictionMethod, alarmsEnabled]);
   
+  // Check for server status changes
+  useEffect(() => {
+    if (!serverStatus.isActive && serverStatus.consecutiveEmptyFetches >= 5) {
+      setShowServerAlert(true);
+    }
+  }, [serverStatus]);
+
   const handleRefreshIntervalChange = (seconds) => {
     // Make sure we're handling seconds as a float
     const intervalInSeconds = parseFloat(seconds);
@@ -266,6 +274,11 @@ export default function Dashboard() {
     }
   };
 
+  // Function to dismiss server alert
+  const dismissServerAlert = () => {
+    setShowServerAlert(false);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen pt-16">
@@ -284,6 +297,35 @@ export default function Dashboard() {
 
   return (
     <div className="container mx-auto px-4 py-8 pt-20">
+      {/* Server Down Alert */}
+      {showServerAlert && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg p-6 shadow-xl max-w-md w-full mx-4">
+            <div className="flex items-center mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mr-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900">Server Connection Lost</h3>
+            </div>
+            <div className="mb-4">
+              <p className="text-gray-700">
+                The application has lost connection to the data server. This may be due to server unavailability or network issues.
+              </p>
+            </div>
+            <div className="flex justify-end">
+              <button 
+                onClick={dismissServerAlert}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-8">
         <div className="flex items-center space-x-3">
           <div className="flex items-center">
