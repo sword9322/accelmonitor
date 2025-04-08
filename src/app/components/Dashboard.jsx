@@ -16,7 +16,7 @@ export default function Dashboard() {
   const [accelerometerData, setAccelerometerData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [refreshInterval, setRefreshInterval] = useState(1000);
+  const [refreshInterval, setRefreshInterval] = useState(1);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [chartType, setChartType] = useState('line');
@@ -76,8 +76,8 @@ export default function Dashboard() {
     const setupSubscription = async () => {
       try {
         // Log with millisecond precision for sub-second intervals
-        const intervalMs = refreshInterval;
-        console.log(`Setting up data subscription with ${refreshInterval} ms interval (${intervalMs}ms) at ${new Date().toLocaleTimeString()}`);
+        const intervalMs = refreshInterval * 1000;
+        console.log(`Setting up data subscription with ${refreshInterval} second interval (${intervalMs}ms) at ${new Date().toLocaleTimeString()}`);
         
         // Set up the subscription
         unsubscribe = accelerometerService.subscribe(data => {
@@ -118,7 +118,7 @@ export default function Dashboard() {
         });
         
         // Start polling with specified interval
-        accelerometerService.startPolling(refreshInterval);
+        accelerometerService.startPolling(intervalMs);
         
         return unsubscribe;
       } catch (error) {

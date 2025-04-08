@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export default function SettingsPanel({ 
   refreshInterval, 
@@ -80,6 +80,11 @@ export default function SettingsPanel({
   const [yMaxThreshold, setYMaxThreshold] = useState(alarmThresholds?.y?.max || 10);
   const [zMinThreshold, setZMinThreshold] = useState(alarmThresholds?.z?.min || -10);
   const [zMaxThreshold, setZMaxThreshold] = useState(alarmThresholds?.z?.max || 10);
+
+  // Update selectedInterval when refreshInterval prop changes
+  useEffect(() => {
+    setSelectedInterval(refreshInterval);
+  }, [refreshInterval]);
 
   // Handle update frequency change
   const handleUpdateFrequencyChange = (e) => {
